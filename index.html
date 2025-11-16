@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karaoke dalkérés</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-950">
+    <main class="mx-auto flex min-h-screen max-w-2xl items-center justify-center px-4 py-12">
+        <form class="w-full space-y-8 rounded-3xl bg-slate-900 p-8 shadow-2xl shadow-purple-900/20 ring-1 ring-slate-800">
+            <header class="space-y-2 text-center">
+                <p class="text-sm font-semibold uppercase tracking-[0.35em] text-purple-400">KareoQ Lounge</p>
+                <h1 class="text-3xl font-bold text-white sm:text-4xl">Kérj egy dalt</h1>
+                <p class="text-sm text-slate-400 sm:text-base">Írd be a választott karaoke számot, az eredeti előadót és a fellépő énekes(eke)t.</p>
+            </header>
+
+            <div class="space-y-6">
+                <div class="space-y-2">
+                    <label for="song-title" class="block text-sm font-medium text-white">Dal címe</label>
+                    <input id="song-title" name="song-title" type="text" required placeholder="Pl. Meseautó" class="w-full rounded-xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-white outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="song-author" class="block text-sm font-medium text-white">Előadó / szerző</label>
+                    <input id="song-author" name="song-author" type="text" required placeholder="Pl. Neoton Família" class="w-full rounded-xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-white outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="singers" class="block text-sm font-medium text-white">Énekes(ek) neve</label>
+                    <textarea id="singers" name="singers" rows="3" required placeholder="Sorold fel, ki lép színpadra" class="w-full rounded-xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-white outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"></textarea>
+                </div>
+
+                <div class="space-y-2">
+                    <label for="notes" class="block text-sm font-medium text-white">Megjegyzés <span class="text-slate-500">(nem kötelező)</span></label>
+                    <textarea id="notes" name="notes" rows="3" placeholder="Ajánlás, hangnem, hangulat..." class="w-full rounded-xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-white outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"></textarea>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full rounded-xl bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500 px-6 py-3 text-center text-sm font-semibold uppercase tracking-widest text-white shadow-lg shadow-purple-900/30 transition hover:brightness-110 focus:outline-none focus:ring-4 focus:ring-purple-500/40">Kérés elküldése</button>
+        </form>
+    </main>
+</body>
+</html>
