@@ -3,7 +3,7 @@ import BackgroundGlow from './BackgroundGlow';
 import SongRequestForm from './SongRequestForm';
 import { AdminDashboard } from './AdminDashboard';
 
-const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD;
+const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD || 'admin123';
 
 const resolveIsAdmin = () => {
   if (typeof window === 'undefined') {
