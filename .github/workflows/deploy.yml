@@ -35,12 +35,17 @@ jobs:
         run: npm install
         working-directory: ./admin-frontend 
 
-      # 4. A build és deploy parancs futtatása
-      # Itt fut a "predeploy" és a "deploy" script is a package.json-ból.
+      # 4. Git felhasználói adatok konfigurálása
+      - name: Configure Git User Identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+        working-directory: ./admin-frontend 
+        
+      # 5. A build és deploy parancs futtatása
       - name: Run Deploy Script
         run: npm run deploy
-        working-directory: ./admin-frontend 
+        working-directory: ./admin-frontend
         env:
-          # A GitHub token (titkosított jelszó), ami engedélyezi a push-t a gh-pages branch-re.
-          # Ezt a GitHub automatikusan biztosítja a repository számára.
+          # A GitHub token, ami engedélyezi a push-t a gh-pages branch-re.
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
