@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import BackgroundGlow from './BackgroundGlow';
 import SongRequestForm from './SongRequestForm';
 import { AdminDashboard } from './AdminDashboard';
 
-const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD ?? 'admin';
+const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD;
 
 const resolveIsAdmin = () => {
   if (typeof window === 'undefined') {
@@ -26,6 +26,7 @@ export default function App(): React.ReactElement {
   const [isAdmin, setIsAdmin] = useState(resolveIsAdmin);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
+  const passwordInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -50,8 +51,19 @@ export default function App(): React.ReactElement {
     }
   }, [isAdmin]);
 
+  useEffect(() => {
+    if (isAdmin && !isAuthenticated) {
+      passwordInputRef.current?.focus();
+    }
+  }, [isAdmin, isAuthenticated]);
+
   const handlePasswordSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!ADMIN_PASSWORD) {
+      console.error('Admin password is not configured.');
+      return;
+    }
+
     if (passwordInput.trim() === ADMIN_PASSWORD) {
       setIsAuthenticated(true);
       setPasswordInput('');
@@ -93,7 +105,7 @@ export default function App(): React.ReactElement {
                   type="password"
                   value={passwordInput}
                   onChange={(event) => setPasswordInput(event.target.value)}
-                  autoFocus
+                  ref={passwordInputRef}
                   required
                   className="w-full rounded-2xl border border-fuchsia-400/40 bg-slate-900/70 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(232,121,249,0.65)] transition focus:border-fuchsia-400 focus:outline-none focus:ring-4 focus:ring-fuchsia-400/30"
                 />
