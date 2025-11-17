@@ -44,8 +44,7 @@ jobs:
         
       # 5. A build és deploy parancs futtatása
       - name: Run Deploy Script
-        run: npm run deploy
+        run: |
+          npm run build
+          npx gh-pages -d build --repo "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
         working-directory: ./admin-frontend
-        env:
-          # A GitHub token, ami engedélyezi a push-t a gh-pages branch-re.
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
