@@ -49,7 +49,7 @@ const formatTimestamp = (value: string) =>
     minute: '2-digit'
   }).format(new Date(value));
 
-export default function AdminDashboard(): React.ReactElement {
+export function AdminDashboard(): React.ReactElement {
   const [requests, setRequests] = useState<AdminRequest[]>(() => defaultQueue);
   const [formData, setFormData] = useState({
     songTitle: '',
@@ -57,6 +57,7 @@ export default function AdminDashboard(): React.ReactElement {
     singers: '',
     notes: ''
   });
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const pendingCount = useMemo(() => requests.length, [requests]);
 
@@ -83,25 +84,24 @@ export default function AdminDashboard(): React.ReactElement {
 
     setRequests((prev) => [newRequest, ...prev]);
     setFormData({ songTitle: '', performer: '', singers: '', notes: '' });
+    setIsFormOpen(false);
   };
 
   const handleComplete = (id: string) => {
     setRequests((prev) => prev.filter((entry) => entry.id !== id));
   };
 
+  const closeForm = () => setIsFormOpen(false);
+
   return (
-    <div className="flex w-full flex-col gap-10 px-6 py-12 font-sans text-slate-100 lg:px-16">
+    <div className="relative flex w-full flex-col gap-10 px-6 py-12 font-sans text-slate-100 lg:px-16">
       <header className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.4em] text-fuchsia-200">kareoQ admin</p>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-white md:text-4xl">Dal kérések kezelése</h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-300">
-            Kövesd a vendégek beérkező kéréseit, és add hozzá a rendezői sorba a következő fellépőket.
-          </p>
+          <h1 className="text-xs font-semibold uppercase tracking-[0.4em] text-fuchsia-200">kareoQ admin</h1>
         </div>
         <nav className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.28em]">
           <a
-            href="/"
+            href="./"
             className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-slate-200 transition hover:bg-white/10"
           >
             Vendég űrlap megnyitása
@@ -112,7 +112,7 @@ export default function AdminDashboard(): React.ReactElement {
         </nav>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid gap-8">
         <section className="rounded-[28px] border border-white/10 bg-slate-900/70 p-8 shadow-[0_0_45px_-12px_rgba(125,106,255,0.55)] backdrop-blur-2xl">
           <header className="flex items-center justify-between gap-4">
             <div>
@@ -159,84 +159,126 @@ export default function AdminDashboard(): React.ReactElement {
                     {request.notes}
                   </p>
                 )}
-                <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+                <div className="mt-4 flex justify-end">
                   <button
                     type="button"
                     onClick={() => handleComplete(request.id)}
-                    className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.32em] text-emerald-200 transition hover:border-emerald-400/60 hover:bg-emerald-500/20"
+                    className="rounded-2xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.32em] text-emerald-200 transition hover:border-emerald-400/50 hover:bg-emerald-500/25 focus:outline-none focus:ring-2 focus:ring-emerald-400/40"
                   >
-                    Lejátszva
+                    Kész
                   </button>
-                  <span className="text-[0.65rem] uppercase tracking-[0.35em] text-slate-400">#{request.id}</span>
                 </div>
               </li>
             ))}
           </ul>
         </section>
-
-        <section className="flex flex-col justify-between gap-6 rounded-[28px] border border-white/10 bg-slate-900/70 p-8 shadow-[0_0_45px_-12px_rgba(232,121,249,0.55)] backdrop-blur-2xl">
-          <div>
-            <h2 className="text-lg font-semibold text-white">Új kérés hozzáadása</h2>
-            <p className="mt-1 text-xs uppercase tracking-[0.32em] text-slate-400">Rendezői gyors űrlap</p>
-          </div>
-
-          <form className="grid gap-5" onSubmit={handleSubmit}>
-            <label className="grid gap-2 text-left text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-              Dal címe
-              <input
-                name="songTitle"
-                value={formData.songTitle}
-                onChange={handleInputChange}
-                required
-                placeholder="Pl. Don’t Stop Me Now"
-                className="w-full rounded-2xl border border-fuchsia-500/40 bg-slate-900/70 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(247,137,222,0.65)] transition focus:border-fuchsia-400 focus:outline-none focus:ring-4 focus:ring-fuchsia-400/30"
-              />
-            </label>
-
-            <label className="grid gap-2 text-left text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-              Előadó / szerző
-              <input
-                name="performer"
-                value={formData.performer}
-                onChange={handleInputChange}
-                required
-                placeholder="Pl. Queen"
-                className="w-full rounded-2xl border border-sky-500/40 bg-slate-900/70 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(96,165,250,0.55)] transition focus:border-sky-400 focus:outline-none focus:ring-4 focus:ring-sky-400/30"
-              />
-            </label>
-
-            <label className="grid gap-2 text-left text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-              Énekes(ek)
-              <input
-                name="singers"
-                value={formData.singers}
-                onChange={handleInputChange}
-                required
-                placeholder="Sorold fel, ki lép színpadra"
-                className="w-full rounded-2xl border border-emerald-500/40 bg-slate-900/70 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(16,185,129,0.5)] transition focus:border-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-400/30"
-              />
-            </label>
-
-            <label className="grid gap-2 text-left text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-              Megjegyzés <span className="text-slate-500">(opcionális)</span>
-              <input
-                name="notes"
-                value={formData.notes}
-                onChange={handleInputChange}
-                placeholder="Pl. extra mikrofon vagy hangnem"
-                className="w-full rounded-2xl border border-white/15 bg-slate-900/60 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(148,163,184,0.5)] transition focus:border-fuchsia-400 focus:outline-none focus:ring-4 focus:ring-fuchsia-400/25"
-              />
-            </label>
-
-            <button
-              type="submit"
-              className="mt-2 w-full rounded-2xl bg-gradient-to-r from-fuchsia-500 via-purple-500 to-sky-500 px-8 py-4 text-center text-sm font-semibold uppercase tracking-[0.4em] text-white shadow-[0_0_45px_rgba(99,102,241,0.6)] transition duration-300 hover:scale-[1.01] hover:shadow-[0_0_65px_rgba(232,121,249,0.75)] focus:outline-none focus:ring-4 focus:ring-fuchsia-400/40"
-            >
-              Rendezői kérés mentése
-            </button>
-          </form>
-        </section>
       </div>
+
+      <button
+        type="button"
+        onClick={() => setIsFormOpen(true)}
+        className="fixed bottom-6 right-6 z-20 inline-flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-sky-500 text-2xl font-bold text-white shadow-[0_0_55px_rgba(232,121,249,0.75)] transition hover:scale-105 focus:outline-none focus:ring-4 focus:ring-fuchsia-400/30 lg:bottom-8 lg:right-10"
+        aria-label="Új kérés hozzáadása"
+      >
+        +
+      </button>
+
+      {isFormOpen && (
+        <div
+          className="fixed inset-0 z-30 flex items-center justify-center bg-slate-950/70 backdrop-blur-xl"
+          onClick={closeForm}
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative w-full max-w-xl rounded-[28px] border border-white/15 bg-slate-900/80 p-8 text-slate-100 shadow-[0_0_65px_-20px_rgba(232,121,249,0.95)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={closeForm}
+              className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-lg font-semibold text-slate-200 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/40"
+              aria-label="Bezárás"
+            >
+              ×
+            </button>
+
+            <div className="mb-6 text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-fuchsia-200">rendezői űrlap</p>
+              <h2 className="mt-2 text-2xl font-extrabold text-white">Új kérés hozzáadása</h2>
+              <p className="mt-1 text-sm text-slate-300">
+                Add meg a következő fellépés adatait, hogy a vendégek sorban maradjanak.
+              </p>
+            </div>
+
+            <form className="grid gap-5" onSubmit={handleSubmit}>
+              <label className="grid gap-2 text-left text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                Dal címe
+                <input
+                  name="songTitle"
+                  value={formData.songTitle}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Pl. Don't Stop Me Now"
+                  className="w-full rounded-2xl border border-fuchsia-500/40 bg-slate-900/70 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(247,137,222,0.65)] transition focus:border-fuchsia-400 focus:outline-none focus:ring-4 focus:ring-fuchsia-400/30"
+                />
+              </label>
+
+              <label className="grid gap-2 text-left text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                Előadó / szerző
+                <input
+                  name="performer"
+                  value={formData.performer}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Pl. Queen"
+                  className="w-full rounded-2xl border border-sky-500/40 bg-slate-900/70 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(96,165,250,0.55)] transition focus:border-sky-400 focus:outline-none focus:ring-4 focus:ring-sky-400/30"
+                />
+              </label>
+
+              <label className="grid gap-2 text-left text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                Énekes(ek)
+                <input
+                  name="singers"
+                  value={formData.singers}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Sorold fel, ki lép színpadra"
+                  className="w-full rounded-2xl border border-emerald-500/40 bg-slate-900/70 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(16,185,129,0.5)] transition focus:border-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-400/30"
+                />
+              </label>
+
+              <label className="grid gap-2 text-left text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                Megjegyzés <span className="text-slate-500">(opcionális)</span>
+                <input
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  placeholder="Pl. extra mikrofon vagy hangnem"
+                  className="w-full rounded-2xl border border-white/15 bg-slate-900/60 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(148,163,184,0.5)] transition focus:border-fuchsia-400 focus:outline-none focus:ring-4 focus:ring-fuchsia-400/25"
+                />
+              </label>
+
+              <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={closeForm}
+                  className="rounded-2xl border border-white/15 px-6 py-3 text-sm font-semibold uppercase tracking-[0.32em] text-slate-200 transition hover:bg-white/10 focus:outline-none focus:ring-4 focus:ring-fuchsia-400/25"
+                >
+                  Mégse
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-2xl bg-gradient-to-r from-fuchsia-500 via-purple-500 to-sky-500 px-8 py-3 text-sm font-semibold uppercase tracking-[0.4em] text-white shadow-[0_0_45px_rgba(99,102,241,0.6)] transition hover:scale-[1.01] hover:shadow-[0_0_65px_rgba(232,121,249,0.75)] focus:outline-none focus:ring-4 focus:ring-fuchsia-400/40"
+                >
+                  Rendezői kérés mentése
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
