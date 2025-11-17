@@ -116,8 +116,7 @@ export function AdminDashboard(): React.ReactElement {
         <section className="rounded-[28px] border border-white/10 bg-slate-900/70 p-8 shadow-[0_0_45px_-12px_rgba(125,106,255,0.55)] backdrop-blur-2xl">
           <header className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-white">Sorban következők</h2>
-              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Következő fellépők listája</p>
+              <h2 className="text-md uppercase tracking-[0.3em] text-slate-200">Következő fellépők listája</h2>
             </div>
             <span className="rounded-full border border-sky-400/30 bg-sky-500/10 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-sky-200">
               élő sor
