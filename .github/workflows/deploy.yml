@@ -1,0 +1,44 @@
+# A munkafolyamat neve, ez fog megjelenni a GitHub Actions fülön.
+name: Deploy React App to GitHub Pages
+
+# Mikor fusson le a munkafolyamat: Push a main branch-re.
+on:
+  push:
+    branches:
+      - main
+  # Lehetővé teszi a manuális futtatást is a GitHub Actions fülről.
+  workflow_dispatch:
+
+# A futtatandó feladatok (job-ok)
+jobs:
+  # A build és deploy feladat neve.
+  build-and-deploy:
+    # A környezet, amiben futni fog (leggyakrabban Ubuntu a CI/CD-hez)
+    runs-on: ubuntu-latest
+
+    # A feladat lépései
+    steps:
+      # 1. Kód lekérése a repository-ból (Checkout)
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      # 2. Node.js környezet beállítása
+      # Fontos, hogy ugyanazt a Node.js verziót használja, mint amit helyben
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22' # Használja a stabil, LTS verziót
+
+      # 3. Függőségek telepítése
+      # Ez futtatja az "npm install"-t
+      - name: Install Dependencies
+        run: npm install
+
+      # 4. A build és deploy parancs futtatása
+      # Itt fut a "predeploy" és a "deploy" script is a package.json-ból.
+      - name: Run Deploy Script
+        run: npm run deploy
+        env:
+          # A GitHub token (titkosított jelszó), ami engedélyezi a push-t a gh-pages branch-re.
+          # Ezt a GitHub automatikusan biztosítja a repository számára.
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
