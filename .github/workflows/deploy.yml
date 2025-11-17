@@ -15,7 +15,10 @@ jobs:
   build-and-deploy:
     # A környezet, amiben futni fog (leggyakrabban Ubuntu a CI/CD-hez)
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write # Ezt kell a gh-pages-nek a push-hoz
+      pages: write    # Ezt kell a GitHub Pages deploy-hoz
+      id-token: write
     # A feladat lépései
     steps:
       # 1. Kód lekérése a repository-ból (Checkout)
