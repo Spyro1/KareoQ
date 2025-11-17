@@ -94,38 +94,38 @@ export function AdminDashboard(): React.ReactElement {
   const closeForm = () => setIsFormOpen(false);
 
   return (
-    <div className="relative flex w-full flex-col gap-10 px-6 py-12 font-sans text-slate-100 lg:px-16">
-      <header className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+    <div className="relative flex w-full flex-col gap-3 px-4 py-5 text-slate-100 sm:gap-4 sm:px-6">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xs font-semibold uppercase tracking-[0.4em] text-fuchsia-200">kareoQ admin</h1>
+          <h1 className="text-sm font-semibold uppercase tracking-[0.24em] text-fuchsia-200">kareoQ admin</h1>
         </div>
-        <nav className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.28em]">
+        <nav className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.18em] sm:gap-3">
           <a
             href="./"
-            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-slate-200 transition hover:bg-white/10"
+            className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-slate-200 transition hover:bg-white/10 sm:px-4"
           >
-            Vendég űrlap megnyitása
+            Vendég űrlap
           </a>
-          <span className="rounded-full border border-fuchsia-400/40 bg-fuchsia-500/20 px-4 py-2 text-fuchsia-100">
+          <span className="rounded-full border border-fuchsia-400/30 bg-fuchsia-500/15 px-3 py-2 text-[0.7rem] font-medium text-fuchsia-100">
             Összes kérés: {pendingCount}
           </span>
         </nav>
       </header>
 
-      <div className="grid gap-8">
-        <section className="rounded-[28px] border border-white/10 bg-slate-900/70 p-8 shadow-[0_0_45px_-12px_rgba(125,106,255,0.55)] backdrop-blur-2xl">
-          <header className="flex items-center justify-between gap-4">
+      <div className="grid gap-6">
+        <section className="rounded-[20px] bg-slate-900/70 p-4 shadow-[0_16px_38px_-28px_rgba(99,102,241,0.5)] backdrop-blur-xl sm:p-5">
+          <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-md uppercase tracking-[0.3em] text-slate-200">Következő fellépők listája</h2>
+              <h2 className="text-base font-semibold uppercase tracking-[0.18em] text-slate-100">
+                Következő fellépők
+              </h2>
+              <p className="text-xs text-slate-400">Legfrissebb kérés kerül a lista tetejére.</p>
             </div>
-            <span className="rounded-full border border-sky-400/30 bg-sky-500/10 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-sky-200">
-              élő sor
-            </span>
           </header>
 
-          <ul className="mt-6 grid gap-4">
+          <ul className="mt-5 grid gap-3 sm:gap-4">
             {requests.length === 0 && (
-              <li className="rounded-2xl border border-white/10 bg-slate-800/60 px-5 py-10 text-center text-sm text-slate-300">
+              <li className="rounded-2xl border border-white/10 bg-slate-800/60 px-4 py-8 text-center text-sm text-slate-300">
                 A sor üres — add hozzá az első fellépőt!
               </li>
             )}
@@ -133,39 +133,47 @@ export function AdminDashboard(): React.ReactElement {
             {requests.map((request) => (
               <li
                 key={request.id}
-                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-slate-800/60 p-5 shadow-[0_20px_60px_-35px_rgba(96,165,250,0.55)] transition hover:border-sky-400/40 hover:shadow-[0_25px_70px_-30px_rgba(99,102,241,0.65)]"
+                className="group relative grid grid-cols-1 gap-4 rounded-2xl border border-white/10 bg-slate-800/60 p-4 shadow-[0_18px_45px_-30px_rgba(96,165,250,0.5)] transition hover:border-sky-400/40 hover:shadow-[0_22px_55px_-30px_rgba(99,102,241,0.6)] sm:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)] sm:p-5"
               >
-                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-fuchsia-500/10 via-purple-500/5 to-sky-500/10 opacity-0 transition group-hover:opacity-100" />
-                <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-r from-fuchsia-500/10 via-purple-500/5 to-sky-500/10 opacity-0 transition group-hover:opacity-100" />
+                <div className="flex flex-col gap-4">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Dal címe</p>
-                    <h3 className="text-lg font-semibold text-white">{request.songTitle}</h3>
+                    <p className="text-[0.7rem] uppercase tracking-[0.22em] text-slate-400">Dal címe</p>
+                    <h3 className="text-lg font-semibold text-white sm:text-xl">{request.songTitle}</h3>
                     <p className="text-sm text-slate-300">Előadó: {request.performer}</p>
                   </div>
-                  <div className="text-right text-xs text-slate-400">
+                  <div className="text-sm text-slate-200">
+                    <p className="font-semibold uppercase tracking-[0.2em] text-[0.7rem] text-slate-400">Énekes(ek)</p>
+                    <p className="leading-relaxed">{request.singers}</p>
+                    {request.notes && (
+                      <p className="mt-3 rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs leading-relaxed text-slate-200">
+                        {request.notes}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex w-full items-start justify-between gap-4 sm:flex-col sm:items-end sm:justify-between sm:gap-5">
+                  <div className="text-xs text-slate-400 sm:text-right">
                     <p>{formatTimestamp(request.submittedAt)}</p>
-                    <p className="uppercase tracking-[0.32em] text-slate-500">
+                    <p className="uppercase tracking-[0.22em] text-slate-500">
                       {request.submittedBy === 'host' ? 'rendező' : 'vendég'}
                     </p>
                   </div>
-                </div>
-                <div className="mt-4 text-sm text-slate-200">
-                  <p className="font-semibold uppercase tracking-[0.25em] text-[0.65rem] text-slate-400">Énekes(ek)</p>
-                  <p>{request.singers}</p>
-                </div>
-                {request.notes && (
-                  <p className="mt-3 rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-slate-200">
-                    {request.notes}
-                  </p>
-                )}
-                <div className="mt-4 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => handleComplete(request.id)}
-                    className="rounded-2xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.32em] text-emerald-200 transition hover:border-emerald-400/50 hover:bg-emerald-500/25 focus:outline-none focus:ring-2 focus:ring-emerald-400/40"
-                  >
-                    Kész
-                  </button>
+                  <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleComplete(request.id)}
+                      className="rounded-xl border border-emerald-400/35 bg-emerald-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200 transition hover:border-emerald-400/60 hover:bg-emerald-500/25 focus:outline-none focus:ring-2 focus:ring-emerald-400/35"
+                    >
+                      Kész
+                    </button>
+                    {/* <div
+                      aria-hidden="true"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-dashed border-white/15 text-[0.65rem] uppercase tracking-[0.2em] text-slate-400/70"
+                    >
+                      +
+                    </div> */}
+                  </div>
                 </div>
               </li>
             ))}
