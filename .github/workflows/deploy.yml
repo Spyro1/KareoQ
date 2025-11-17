@@ -48,7 +48,7 @@ jobs:
       # 5. A build és deploy parancs futtatása
       - name: Run Deploy Script
         env:
-          REACT_APP_ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          REACT_APP_ADMIN_PASSWORD: ${{ vars.ADMIN_PASSWORD }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm run build
