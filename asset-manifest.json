@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/KareoQ/admin/static/css/main.75344201.css",
+    "main.js": "/KareoQ/admin/static/js/main.8746e008.js",
+    "index.html": "/KareoQ/admin/index.html",
+    "main.75344201.css.map": "/KareoQ/admin/static/css/main.75344201.css.map",
+    "main.8746e008.js.map": "/KareoQ/admin/static/js/main.8746e008.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.75344201.css",
+    "static/js/main.8746e008.js"
+  ]
+}
