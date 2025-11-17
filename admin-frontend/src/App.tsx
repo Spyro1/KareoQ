@@ -60,7 +60,7 @@ export default function App(): React.ReactElement {
   const handlePasswordSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!ADMIN_PASSWORD) {
-      console.error('Admin password is not configured.');
+      alert('Admin password is not configured.');
       return;
     }
 

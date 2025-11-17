@@ -14,6 +14,8 @@ jobs:
   # A build és deploy feladat neve.
   build-and-deploy:
     # A környezet, amiben futni fog (leggyakrabban Ubuntu a CI/CD-hez)
+    environment:
+      name: production
     runs-on: ubuntu-latest
     permissions:
       contents: write # Ezt kell a gh-pages-nek a push-hoz
