@@ -33,11 +33,13 @@ jobs:
       # Ez futtatja az "npm install"-t
       - name: Install Dependencies
         run: npm install
+        working-directory: ./admin-frontend 
 
       # 4. A build és deploy parancs futtatása
       # Itt fut a "predeploy" és a "deploy" script is a package.json-ból.
       - name: Run Deploy Script
         run: npm run deploy
+        working-directory: ./admin-frontend 
         env:
           # A GitHub token (titkosított jelszó), ami engedélyezi a push-t a gh-pages branch-re.
           # Ezt a GitHub automatikusan biztosítja a repository számára.
