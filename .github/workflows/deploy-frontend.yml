@@ -6,6 +6,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'frontend/**' # Csak a frontend mappában történt változásokra fusson le
   # Lehetővé teszi a manuális futtatást is a GitHub Actions fülről.
   workflow_dispatch:
 
