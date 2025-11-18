@@ -40,14 +40,14 @@ jobs:
       # Ez futtatja az "npm install"-t
       - name: Install Dependencies
         run: npm install
-        working-directory: ./admin-frontend 
+        working-directory: ./frontend 
 
       # 4. Git felhasználói adatok konfigurálása
       - name: Configure Git User Identity
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-        working-directory: ./admin-frontend 
+        working-directory: ./frontend 
         
       # 5. A build és deploy parancs futtatása
       - name: Run Deploy Script
@@ -57,4 +57,4 @@ jobs:
         run: |
           npm run build
           npx gh-pages -d build --repo "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
-        working-directory: ./admin-frontend
+        working-directory: ./frontend
