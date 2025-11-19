@@ -12,6 +12,9 @@ on:
 
 jobs:
   deploy:
+    # A környezet, amiben futni fog (leggyakrabban Ubuntu a CI/CD-hez)
+    environment:
+      name: production
     runs-on: ubuntu-latest
 
     steps:
