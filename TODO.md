@@ -1,7 +1,5 @@
 # TODO - Teendők
 
-- [ ] Beérkezett kérésekre IP cím szűrést csinálni, két kérés lehet maximum egy IP-ről egyszerre a sorban
-- [ ] Backend megcsinálása
-  - [ ] Táblák létrehozása
-  - [ ] endpointok megírása
-  
+- [x] Beérkezett kérésekre IP cím szűrést csinálni, két kérés lehet maximum egy IP-ről egyszerre a sorban
+- [ ] Lejátszott számokat is lehessen visszanézni
+- [ ] Statisztika: Lejátszott számok száma, stb  

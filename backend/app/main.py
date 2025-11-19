@@ -10,6 +10,10 @@ from sqlmodel import Session
 from .database import get_session, init_db
 from .models import SongRequest, SongRequestCreate, SongRequestRead
 
+ADMIN_REQUEST_HEADER = "x-admin-request"
+ADMIN_TRUE_VALUES = {"1", "true", "yes", "on"}
+ADMIN_IP_PREFIX = "admin::"
+
 app = FastAPI(title="kareoQ Backend", version="0.1.0")
 
 app.add_middleware(
@@ -54,26 +58,34 @@ def submit_request(
     request: Request,
     session: Session = Depends(get_session),
 ) -> SongRequest:
+    header_flag = request.headers.get(ADMIN_REQUEST_HEADER, "").strip().lower()
+    query_flag = request.query_params.get("admin", "").strip().lower()
+    is_admin_request = header_flag in ADMIN_TRUE_VALUES or query_flag in ADMIN_TRUE_VALUES
     client_ip = request.client.host if request.client else "unknown"
 
-    pending_count = session.exec(
-        select(func.count())
-        .select_from(SongRequest)
-        .where(SongRequest.ip_address == client_ip, SongRequest.is_played.is_(False))
-    ).scalar_one()
+    if not is_admin_request:
+        pending_count = session.exec(
+            select(func.count())
+            .select_from(SongRequest)
+            .where(SongRequest.ip_address == client_ip, SongRequest.is_played.is_(False))
+        ).scalar_one()
 
-    if pending_count >= 2:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Maximum 2 aktív kérés engedélyezett ezen az IP címről, várj míg lejátsszuk az egyiket.",
-        )
+        if pending_count >= 2:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Maximum 2 aktív kérés engedélyezett ezen az IP címről, várj míg lejátsszuk az egyiket.",
+            )
+
+    stored_ip = (
+        f"{ADMIN_IP_PREFIX}{client_ip}" if is_admin_request else client_ip
+    )
 
     new_request = SongRequest(
         song_title=payload.song_title,
         performer=payload.performer,
         singers=payload.singers,
         notes=payload.notes,
-        ip_address=client_ip,
+        ip_address=stored_ip,
     )
     session.add(new_request)
     session.commit()
@@ -104,16 +116,17 @@ def mark_as_played(
     return entry
 
 
-@app.post(
-    "/requests/reset",
-    status_code=status.HTTP_204_NO_CONTENT,
+@app.delete(
+    "/requests",
+    status_code=status.HTTP_200_OK,
     tags=["Requests"],
 )
 def reset_queue(
     session: Session = Depends(get_session),
-) -> None:
+) -> dict[str, str]:
     session.exec(delete(SongRequest))
     session.commit()
+    return {"status": "reset"}
 
 
 if __name__ == "__main__":

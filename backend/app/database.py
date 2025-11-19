@@ -2,12 +2,23 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from pathlib import Path
+import os
 from typing import Iterator
 
 from sqlmodel import SQLModel, Session, create_engine
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "app.db"
+
+def _resolve_db_path() -> Path:
+    override = os.environ.get("KAREOQ_DB_FILENAME")
+    if override:
+        candidate = Path(override)
+        if candidate.is_absolute():
+            return candidate
+        return BASE_DIR / candidate
+    return BASE_DIR / "app.db"
+
+DB_PATH = _resolve_db_path()
 DATABASE_URL = f"sqlite:///{DB_PATH.as_posix()}"
 
 _engine = create_engine(

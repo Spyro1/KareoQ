@@ -9,6 +9,7 @@ type BackendSongRequest = {
     created_at: string;
     played_at?: string | null;
     is_played: boolean;
+    ip_address?: string;
 };
 
 type AdminRequest = {
@@ -31,15 +32,25 @@ const formatTimestamp = (value: string) =>
         minute: '2-digit'
     }).format(new Date(value));
 
-const normalizeRequest = (payload: BackendSongRequest, origin: 'guest' | 'host' = 'guest'): AdminRequest => ({
-    id: payload.id,
-    songTitle: payload.song_title,
-    performer: payload.performer,
-    singers: payload.singers,
-    notes: payload.notes ?? undefined,
-    submittedBy: origin,
-    submittedAt: payload.created_at
-});
+const ADMIN_IP_PREFIX = 'admin::';
+
+const normalizeRequest = (payload: BackendSongRequest, origin?: 'guest' | 'host'): AdminRequest => {
+    const derivedOrigin: 'guest' | 'host' = origin
+        ? origin
+        : payload.ip_address?.startsWith(ADMIN_IP_PREFIX)
+            ? 'host'
+            : 'guest';
+
+    return {
+        id: payload.id,
+        songTitle: payload.song_title,
+        performer: payload.performer,
+        singers: payload.singers,
+        notes: payload.notes ?? undefined,
+        submittedBy: derivedOrigin,
+        submittedAt: payload.created_at
+    };
+};
 
 const sortRequestsBySubmittedAt = (entries: AdminRequest[]) =>
     [...entries].sort(
@@ -72,7 +83,8 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
     const backendBase = useMemo(() => backendBaseUrl?.trim().replace(/\/+$/, '') ?? '', [backendBaseUrl]);
     const backendHealthUrl = useMemo(() => (backendBase ? `${backendBase}/health` : ''), [backendBase]);
     const backendRequestsUrl = useMemo(() => (backendBase ? `${backendBase}/requests` : ''), [backendBase]);
-    const backendResetUrl = useMemo(() => (backendBase ? `${backendBase}/requests/reset` : ''), [backendBase]);
+    const backendAdminRequestsUrl = useMemo(() => (backendRequestsUrl ? `${backendRequestsUrl}?admin=1` : ''), [backendRequestsUrl]);
+    const backendResetUrl = backendRequestsUrl;
 
     const pendingCount = useMemo(() => requests.length, [requests]);
 
@@ -192,7 +204,7 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!backendRequestsUrl) {
+        if (!backendAdminRequestsUrl) {
             setFormStatus('error');
             setFormMessage('Backend URL nincs konfigurálva.');
             return;
@@ -209,9 +221,12 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                 notes: formData.notes.trim() || undefined
             };
 
-            const response = await fetch(backendRequestsUrl, {
+            const response = await fetch(backendAdminRequestsUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Admin-Request': 'true'
+                },
                 body: JSON.stringify(payload)
             });
 
@@ -281,7 +296,7 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
         setListError(null);
         setListNotice(null);
         try {
-            const response = await fetch(backendResetUrl, { method: 'POST' });
+            const response = await fetch(backendResetUrl, { method: 'DELETE' });
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
