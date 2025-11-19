@@ -4,7 +4,7 @@ from datetime import datetime
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlmodel import Session
 
 from .database import get_session, init_db
@@ -102,6 +102,18 @@ def mark_as_played(
         session.refresh(entry)
 
     return entry
+
+
+@app.post(
+    "/requests/reset",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["Requests"],
+)
+def reset_queue(
+    session: Session = Depends(get_session),
+) -> None:
+    session.exec(delete(SongRequest))
+    session.commit()
 
 
 if __name__ == "__main__":
