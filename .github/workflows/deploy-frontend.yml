@@ -50,12 +50,11 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
         working-directory: ./frontend 
         
-      # 5. A build és deploy parancs futtatása
-      - name: Run Deploy Script
+      # 5. Érzékeny env változók validálása még build előtt
+      - name: Validate Required Environment Variables
         env:
           REACT_APP_ADMIN_PASSWORD: ${{ vars.REACT_APP_ADMIN_PASSWORD }}
           REACT_APP_BACKEND_URL: ${{ vars.REACT_APP_BACKEND_URL }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -z "$REACT_APP_ADMIN_PASSWORD" ]; then
             echo "Hiányzik az REACT_APP_ADMIN_PASSWORD environment value (vars)." >&2
@@ -65,6 +64,15 @@ jobs:
             echo "Hiányzik az REACT_APP_BACKEND_URL environment value (vars)." >&2
             exit 1
           fi
+        working-directory: ./frontend 
+
+      # 6. A build és deploy parancs futtatása
+      - name: Run Deploy Script
+        env:
+          REACT_APP_ADMIN_PASSWORD: ${{ vars.REACT_APP_ADMIN_PASSWORD }}
+          REACT_APP_BACKEND_URL: ${{ vars.REACT_APP_BACKEND_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
           npm run build
           npx gh-pages -d build --repo "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
-        working-directory: ./frontend
+        working-directory: ./frontend 

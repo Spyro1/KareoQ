@@ -32,6 +32,8 @@ export default function App(): React.ReactElement {
     if (typeof window === 'undefined') {
       return undefined;
     }
+    console.log('Admin password for local development:', process.env.REACT_APP_ADMIN_PASSWORD);
+    console.log('Backend URL:', process.env.REACT_APP_BACKEND_URL);
 
     const handleLocationChange = () => setIsAdmin(resolveIsAdmin());
 
