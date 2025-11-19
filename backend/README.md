@@ -27,7 +27,7 @@ backend/
 
 ```bash
 cd backend
-python -m venv .venv
+python -m venv .venv # Virtuális environment létrehozása
 . .venv/Scripts/activate  # Windows PowerShell: .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 uvicorn app.main:app --reload

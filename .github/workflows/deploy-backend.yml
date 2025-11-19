@@ -34,22 +34,23 @@ jobs:
         run: |
           python tests_smoke.py
 
-      # Itt jön a deploy a külső hostingra.
-      # A konkrét lépések függnek attól, hova deployolsz (pl. Heroku, AWS, DigitalOcean, stb.)
-      
-      - name: Deploy to Hosting Service
-        # PÉLDA: Ha SCP-vel (SSH) vagy egy adott CLI eszközzel (pl. Heroku CLI) deployolsz
-        # A legtöbb hosting szolgáltatóhoz van dedikált GitHub Action is.
-        # Pl. Egy egyszerű SCP/SSH deployhoz:
-        # uses: appleboy/ssh-action@master
-        # with:
-        #   host: ${{ secrets.HOST_IP }}
-        #   username: ${{ secrets.HOST_USERNAME }}
-        #   key: ${{ secrets.HOST_SSH_KEY }}
-        #   script: |
-        #     cd /path/to/your/app
-        #     git pull origin main
-        #     # Stb. a backend újraindításához szükséges parancsok
+      - name: Trigger Render Deploy Hook
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        shell: bash
+        run: |
+          if [[ -z "$RENDER_DEPLOY_HOOK_URL" ]]; then
+            echo "RENDER_DEPLOY_HOOK_URL secret hiányzik"
+            exit 1
+          fi
 
-        # HELYETTE HASZNÁLJ EGY A SZOLGÁLTATÓD ÁLTAL JAVASOLT ACTION-T!
-        run: echo "Itt futna a deploy script, pl. egy CLI parancs a feltöltéshez."
+          echo "Render deploy hook meghívása..."
+          http_code=$(curl -s -o /tmp/render_response.txt -w "%{http_code}" -X POST "$RENDER_DEPLOY_HOOK_URL")
+          cat /tmp/render_response.txt
+
+          if [[ "$http_code" -ge 200 && "$http_code" -lt 300 ]]; then
+            echo "Render hook sikeresen befogadva ($http_code)."
+          else
+            echo "Render hook hívás sikertelen (HTTP $http_code)."
+            exit 1
+          fi
