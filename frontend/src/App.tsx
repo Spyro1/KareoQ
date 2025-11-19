@@ -4,6 +4,7 @@ import SongRequestForm from './SongRequestForm';
 import { AdminDashboard } from './AdminDashboard';
 
 const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD || 'admin123';
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000/';
 
 const resolveIsAdmin = () => {
   if (typeof window === 'undefined') {
@@ -32,8 +33,6 @@ export default function App(): React.ReactElement {
     if (typeof window === 'undefined') {
       return undefined;
     }
-    console.log('Admin password for local development:', process.env.REACT_APP_ADMIN_PASSWORD);
-    console.log('Backend URL:', process.env.REACT_APP_BACKEND_URL);
 
     const handleLocationChange = () => setIsAdmin(resolveIsAdmin());
 
@@ -84,7 +83,7 @@ export default function App(): React.ReactElement {
       <BackgroundGlow />
       <div className="relative z-10 flex min-h-screen w-full">
         {allowAdminView ? (
-          <AdminDashboard />
+          <AdminDashboard backendBaseUrl={BACKEND_URL} />
         ) : (
           <div className="flex min-h-screen w-full items-center justify-center px-4 py-16">
             <SongRequestForm />
