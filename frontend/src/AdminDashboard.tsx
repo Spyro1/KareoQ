@@ -65,6 +65,7 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
     const [wakeStatus, setWakeStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
     const [wakeMessage, setWakeMessage] = useState('');
     const wakeResetRef = useRef<number | null>(null);
+    const wakeStartRef = useRef<number | null>(null);
 
     const pendingCount = useMemo(() => requests.length, [requests]);
     const backendHealthUrl = useMemo(() => {
@@ -91,7 +92,7 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
             setWakeStatus('idle');
             setWakeMessage('');
             wakeResetRef.current = null;
-        }, 3500);
+        }, 60_000);
     }, [clearWakeTimeout]);
 
     const handleWakeBackend = useCallback(async () => {
@@ -104,6 +105,7 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
 
         setWakeStatus('pending');
         setWakeMessage('Ébresztés...');
+        wakeStartRef.current = Date.now();
 
         try {
             const controller = typeof AbortController !== 'undefined' ? new AbortController() : undefined;
@@ -124,7 +126,12 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                 throw new Error(`Health check failed with status ${response.status}`);
             }
             setWakeStatus('success');
-            setWakeMessage('Sikeres ébresztés!');
+            const elapsedSeconds = wakeStartRef.current
+                ? ((Date.now() - wakeStartRef.current) / 1000).toFixed(1)
+                : undefined;
+            setWakeMessage(
+                elapsedSeconds ? `Sikeres ébresztés! ${elapsedSeconds} s` : 'Sikeres ébresztés!'
+            );
         } catch (error) {
             console.error('Wake backend failed', error);
             setWakeStatus('error');
@@ -134,6 +141,7 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                 setWakeMessage('Nem sikerült ébreszteni.');
             }
         } finally {
+            wakeStartRef.current = null;
             queueWakeReset();
         }
     }, [backendHealthUrl, queueWakeReset]);
