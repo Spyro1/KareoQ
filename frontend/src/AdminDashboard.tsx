@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useToast } from './useToast';
 
 type BackendSongRequest = {
     id: number;
@@ -62,8 +63,6 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
-    const [listError, setListError] = useState<string | null>(null);
-    const [listNotice, setListNotice] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
         songTitle: '',
@@ -79,6 +78,7 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
     const [wakeMessage, setWakeMessage] = useState('');
     const wakeResetRef = useRef<number | null>(null);
     const wakeStartRef = useRef<number | null>(null);
+    const { showToast } = useToast();
 
     const backendBase = useMemo(() => backendBaseUrl?.trim().replace(/\/+$/, '') ?? '', [backendBaseUrl]);
     const backendHealthUrl = useMemo(() => (backendBase ? `${backendBase}/health` : ''), [backendBase]);
@@ -88,10 +88,12 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
 
     const pendingCount = useMemo(() => requests.length, [requests]);
 
+    
+
     const loadRequests = useCallback(
         async (mode: 'initial' | 'refresh' = 'initial') => {
             if (!backendRequestsUrl) {
-                setListError('Backend URL nincs konfigurálva.');
+                showToast('error', 'Backend URL nincs konfigurálva.');
                 setIsLoading(false);
                 setIsRefreshing(false);
                 return;
@@ -106,18 +108,14 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                 const data: BackendSongRequest[] = await response.json();
                 const normalized = data.map((entry) => normalizeRequest(entry));
                 setRequests(sortRequestsBySubmittedAt(normalized));
-                setListError(null);
-                if (mode === 'initial') {
-                    setListNotice(null);
-                }
             } catch (error) {
                 console.error('Fetch requests failed', error);
-                setListError('Nem sikerült lekérni a kéréseket. Próbáld újra.');
+                showToast('error', 'Nem sikerült lekérni a kéréseket. Próbáld újra.');
             } finally {
                 mode === 'initial' ? setIsLoading(false) : setIsRefreshing(false);
             }
         },
-        [backendRequestsUrl]
+        [backendRequestsUrl, showToast]
     );
 
     useEffect(() => {
@@ -260,7 +258,7 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
 
     const handleComplete = async (id: number) => {
         if (!backendBase) {
-            setListError('Backend URL nincs konfigurálva.');
+            showToast('error', 'Backend URL nincs konfigurálva.');
             return;
         }
 
@@ -272,16 +270,16 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                 throw new Error(`HTTP ${response.status}`);
             }
             setRequests((prev) => prev.filter((entry) => entry.id !== id));
-            setListNotice('Kérés lezárva.');
+            showToast('success', 'Kérés lezárva.');
         } catch (error) {
             console.error('Mark as played failed', error);
-            setListError('Nem sikerült teljesítettnek jelölni a kérést.');
+            showToast('error', 'Nem sikerült teljesítettnek jelölni a kérést.');
         }
     };
 
     const handleResetQueue = useCallback(async () => {
         if (!backendResetUrl) {
-            setListError('Backend URL nincs konfigurálva.');
+            showToast('error', 'Backend URL nincs konfigurálva.');
             return;
         }
 
@@ -293,22 +291,20 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
         }
 
         setIsResetting(true);
-        setListError(null);
-        setListNotice(null);
         try {
             const response = await fetch(backendResetUrl, { method: 'DELETE' });
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
-            setListNotice('Új kareoQ sor létrehozva, korábbi kérések törölve.');
+            showToast('info', 'Új kareoQ sor létrehozva, korábbi kérések törölve.');
             await loadRequests('initial');
         } catch (error) {
             console.error('Reset queue failed', error);
-            setListError('Nem sikerült új kareoQ sort nyitni.');
+            showToast('error', 'Nem sikerült új kareoQ sort nyitni.');
         } finally {
             setIsResetting(false);
         }
-    }, [backendResetUrl, loadRequests]);
+    }, [backendResetUrl, loadRequests, showToast]);
 
     const openForm = () => {
         setFormStatus('idle');
@@ -385,18 +381,6 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                         </button>
                     </nav>
                 </header>
-
-                {listError && (
-                    <p className="text-xs font-medium uppercase tracking-[0.3em] text-rose-300">
-                        {listError}
-                    </p>
-                )}
-                {listNotice && (
-                    <p className="text-xs font-medium uppercase tracking-[0.3em] text-emerald-300">
-                        {listNotice}
-                    </p>
-                )}
-
                 <div className="grid gap-6">
                     <section className="rounded-[20px] bg-slate-900/70 p-4 shadow-[0_16px_38px_-28px_rgba(99,102,241,0.5)] backdrop-blur-xl sm:p-5">
                         <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -417,7 +401,7 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                                 </li>
                             )}
 
-                            {!isLoading && requests.length === 0 && !listError && (
+                            {!isLoading && requests.length === 0 && (
                                 <li className="rounded-2xl border border-white/10 bg-slate-800/60 px-4 py-8 text-center text-sm text-slate-300">
                                     A sor üres — add hozzá az első fellépőt!
                                 </li>
