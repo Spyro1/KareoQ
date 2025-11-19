@@ -86,7 +86,7 @@ export default function App(): React.ReactElement {
           <AdminDashboard backendBaseUrl={BACKEND_URL} />
         ) : (
           <div className="flex min-h-screen w-full items-center justify-center px-4 py-16">
-            <SongRequestForm />
+            <SongRequestForm backendBaseUrl={BACKEND_URL} />
           </div>
         )}
       </div>

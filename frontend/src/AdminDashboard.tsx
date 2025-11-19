@@ -1,7 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+type BackendSongRequest = {
+    id: number;
+    song_title: string;
+    performer: string;
+    singers: string;
+    notes?: string | null;
+    created_at: string;
+    played_at?: string | null;
+    is_played: boolean;
+};
+
 type AdminRequest = {
-    id: string;
+    id: number;
     songTitle: string;
     performer: string;
     singers: string;
@@ -10,38 +21,9 @@ type AdminRequest = {
     submittedAt: string;
 };
 
-const defaultQueue: AdminRequest[] = [
-    {
-        id: 'rq-1',
-        songTitle: 'I Will Survive',
-        performer: 'Gloria Gaynor',
-        singers: 'Dóri & Zsófi',
-        notes: 'Kezdjük lassan, refrén kétszer',
-        submittedBy: 'guest',
-        submittedAt: '2025-11-17T18:40:00Z'
-    },
-    {
-        id: 'rq-2',
-        songTitle: 'Highway to Hell',
-        performer: 'AC/DC',
-        singers: 'Marci',
-        notes: 'Gitár intro jöhet hangerősen',
-        submittedBy: 'guest',
-        submittedAt: '2025-11-17T18:55:00Z'
-    },
-    {
-        id: 'rq-3',
-        songTitle: 'Tavaszi szél',
-        performer: 'Tradicionális',
-        singers: 'Rendezői teszt',
-        notes: 'Színpad check',
-        submittedBy: 'host',
-        submittedAt: '2025-11-17T19:05:00Z'
-    }
-];
-
-const createRequestId = () =>
-    typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `rq-${Date.now()}`;
+type AdminDashboardProps = {
+    backendBaseUrl?: string;
+};
 
 const formatTimestamp = (value: string) =>
     new Intl.DateTimeFormat('hu-HU', {
@@ -49,29 +31,74 @@ const formatTimestamp = (value: string) =>
         minute: '2-digit'
     }).format(new Date(value));
 
-type AdminDashboardProps = {
-    backendBaseUrl?: string;
-};
+const normalizeRequest = (payload: BackendSongRequest, origin: 'guest' | 'host' = 'guest'): AdminRequest => ({
+    id: payload.id,
+    songTitle: payload.song_title,
+    performer: payload.performer,
+    singers: payload.singers,
+    notes: payload.notes ?? undefined,
+    submittedBy: origin,
+    submittedAt: payload.created_at
+});
 
 export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.ReactElement {
-    const [requests, setRequests] = useState<AdminRequest[]>(() => defaultQueue);
+    const [requests, setRequests] = useState<AdminRequest[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [listError, setListError] = useState<string | null>(null);
+
     const [formData, setFormData] = useState({
         songTitle: '',
         performer: '',
         singers: '',
         notes: ''
     });
+    const [formStatus, setFormStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
+    const [formMessage, setFormMessage] = useState('');
     const [isFormOpen, setIsFormOpen] = useState(false);
+
     const [wakeStatus, setWakeStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
     const [wakeMessage, setWakeMessage] = useState('');
     const wakeResetRef = useRef<number | null>(null);
     const wakeStartRef = useRef<number | null>(null);
 
+    const backendBase = useMemo(() => backendBaseUrl?.trim().replace(/\/+$/, '') ?? '', [backendBaseUrl]);
+    const backendHealthUrl = useMemo(() => (backendBase ? `${backendBase}/health` : ''), [backendBase]);
+    const backendRequestsUrl = useMemo(() => (backendBase ? `${backendBase}/requests` : ''), [backendBase]);
+
     const pendingCount = useMemo(() => requests.length, [requests]);
-    const backendHealthUrl = useMemo(() => {
-        const normalized = backendBaseUrl?.trim().replace(/\/+$/, '') ?? '';
-        return normalized ? `${normalized}/health` : '';
-    }, [backendBaseUrl]);
+
+    const loadRequests = useCallback(
+        async (mode: 'initial' | 'refresh' = 'initial') => {
+            if (!backendRequestsUrl) {
+                setListError('Backend URL nincs konfigurálva.');
+                setIsLoading(false);
+                setIsRefreshing(false);
+                return;
+            }
+
+            mode === 'initial' ? setIsLoading(true) : setIsRefreshing(true);
+            try {
+                const response = await fetch(backendRequestsUrl, { cache: 'no-store' });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data: BackendSongRequest[] = await response.json();
+                setRequests(data.map((entry) => normalizeRequest(entry)));
+                setListError(null);
+            } catch (error) {
+                console.error('Fetch requests failed', error);
+                setListError('Nem sikerült lekérni a kéréseket. Próbáld újra.');
+            } finally {
+                mode === 'initial' ? setIsLoading(false) : setIsRefreshing(false);
+            }
+        },
+        [backendRequestsUrl]
+    );
+
+    useEffect(() => {
+        loadRequests('initial');
+    }, [loadRequests]);
 
     const clearWakeTimeout = useCallback(() => {
         if (typeof window === 'undefined' || wakeResetRef.current === null) {
@@ -151,32 +178,88 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!formData.songTitle.trim() || !formData.performer.trim() || !formData.singers.trim()) {
+        if (!backendRequestsUrl) {
+            setFormStatus('error');
+            setFormMessage('Backend URL nincs konfigurálva.');
             return;
         }
 
-        const newRequest: AdminRequest = {
-            id: createRequestId(),
-            songTitle: formData.songTitle.trim(),
-            performer: formData.performer.trim(),
-            singers: formData.singers.trim(),
-            notes: formData.notes.trim() || undefined,
-            submittedBy: 'host',
-            submittedAt: new Date().toISOString()
-        };
+        setFormStatus('pending');
+        setFormMessage('Mentés folyamatban...');
 
-        setRequests((prev) => [newRequest, ...prev]);
-        setFormData({ songTitle: '', performer: '', singers: '', notes: '' });
+        try {
+            const payload = {
+                song_title: formData.songTitle.trim(),
+                performer: formData.performer.trim(),
+                singers: formData.singers.trim(),
+                notes: formData.notes.trim() || undefined
+            };
+
+            const response = await fetch(backendRequestsUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                let detail = `Nem sikerült menteni (HTTP ${response.status}).`;
+                try {
+                    const body = await response.json();
+                    if (typeof body?.detail === 'string') {
+                        detail = body.detail;
+                    }
+                } catch {
+                    /* ignore */
+                }
+                throw new Error(detail);
+            }
+
+            const created: BackendSongRequest = await response.json();
+            setRequests((prev) => [normalizeRequest(created, 'host'), ...prev]);
+            setFormStatus('success');
+            setFormMessage('Kérés hozzáadva a sorhoz.');
+            setFormData({ songTitle: '', performer: '', singers: '', notes: '' });
+            setIsFormOpen(false);
+        } catch (error) {
+            console.error('Admin submit failed', error);
+            setFormStatus('error');
+            setFormMessage(error instanceof Error ? error.message : 'Ismeretlen hiba történt.');
+        }
+    };
+
+    const handleComplete = async (id: number) => {
+        if (!backendBase) {
+            setListError('Backend URL nincs konfigurálva.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${backendBase}/requests/${id}/play`, {
+                method: 'PATCH'
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            setRequests((prev) => prev.filter((entry) => entry.id !== id));
+        } catch (error) {
+            console.error('Mark as played failed', error);
+            setListError('Nem sikerült teljesítettnek jelölni a kérést.');
+        }
+    };
+
+    const openForm = () => {
+        setFormStatus('idle');
+        setFormMessage('');
+        setIsFormOpen(true);
+    };
+
+    const closeForm = () => {
+        setFormStatus('idle');
+        setFormMessage('');
         setIsFormOpen(false);
     };
-
-    const handleComplete = (id: string) => {
-        setRequests((prev) => prev.filter((entry) => entry.id !== id));
-    };
-
-    const closeForm = () => setIsFormOpen(false);
 
     const wakeButtonClasses = useMemo(() => {
         switch (wakeStatus) {
@@ -226,15 +309,27 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                                 />
                             </svg>
                         )}
-                        <span>
-                            {wakeStatus === 'idle' ? 'Backend ébresztése' : wakeMessage}
-                        </span>
+                        <span>{wakeStatus === 'idle' ? 'Backend ébresztése' : wakeMessage}</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => loadRequests('refresh')}
+                        disabled={isRefreshing}
+                        className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-slate-200 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 sm:px-4 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                        {isRefreshing ? 'Frissítés...' : 'Lista frissítése'}
                     </button>
                     <span className="rounded-full border border-fuchsia-400/30 bg-fuchsia-500/15 px-3 py-2 text-[0.7rem] font-medium text-fuchsia-100">
                         Összes kérés: {pendingCount}
                     </span>
                 </nav>
             </header>
+
+            {listError && (
+                <p className="text-xs font-medium uppercase tracking-[0.3em] text-rose-300">
+                    {listError}
+                </p>
+            )}
 
             <div className="grid gap-6">
                 <section className="rounded-[20px] bg-slate-900/70 p-4 shadow-[0_16px_38px_-28px_rgba(99,102,241,0.5)] backdrop-blur-xl sm:p-5">
@@ -248,66 +343,67 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                     </header>
 
                     <ul className="mt-5 grid gap-3 sm:gap-4">
-                        {requests.length === 0 && (
+                        {isLoading && (
+                            <li className="rounded-2xl border border-white/10 bg-slate-800/60 px-4 py-8 text-center text-sm text-slate-300">
+                                Lista betöltése...
+                            </li>
+                        )}
+
+                        {!isLoading && requests.length === 0 && !listError && (
                             <li className="rounded-2xl border border-white/10 bg-slate-800/60 px-4 py-8 text-center text-sm text-slate-300">
                                 A sor üres — add hozzá az első fellépőt!
                             </li>
                         )}
 
-                        {requests.map((request) => (
-                            <li
-                                key={request.id}
-                                className="group relative grid grid-cols-1 gap-4 rounded-2xl border border-white/10 bg-slate-800/60 p-4 shadow-[0_18px_45px_-30px_rgba(96,165,250,0.5)] transition hover:border-sky-400/40 hover:shadow-[0_22px_55px_-30px_rgba(99,102,241,0.6)] sm:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)] sm:p-5"
-                            >
-                                <div className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-r from-fuchsia-500/10 via-purple-500/5 to-sky-500/10 opacity-0 transition group-hover:opacity-100" />
-                                <div className="flex flex-col gap-4">
-                                    <div>
-                                        <p className="text-[0.7rem] uppercase tracking-[0.22em] text-slate-400">Dal címe</p>
-                                        <h3 className="text-lg font-semibold text-white sm:text-xl">{request.songTitle}</h3>
-                                        <p className="text-sm text-slate-300">Előadó: {request.performer}</p>
+                        {!isLoading &&
+                            requests.map((request) => (
+                                <li
+                                    key={request.id}
+                                    className="group relative grid grid-cols-1 gap-4 rounded-2xl border border-white/10 bg-slate-800/60 p-4 shadow-[0_18px_45px_-30px_rgba(96,165,250,0.5)] transition hover:border-sky-400/40 hover:shadow-[0_22px_55px_-30px_rgba(99,102,241,0.6)] sm:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)] sm:p-5"
+                                >
+                                    <div className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-r from-fuchsia-500/10 via-purple-500/5 to-sky-500/10 opacity-0 transition group-hover:opacity-100" />
+                                    <div className="flex flex-col gap-4">
+                                        <div>
+                                            <p className="text-[0.7rem] uppercase tracking-[0.22em] text-slate-400">Dal címe</p>
+                                            <h3 className="text-lg font-semibold text-white sm:text-xl">{request.songTitle}</h3>
+                                            <p className="text-sm text-slate-300">Előadó: {request.performer}</p>
+                                        </div>
+                                        <div className="text-sm text-slate-200">
+                                            <p className="font-semibold uppercase tracking-[0.2em] text-[0.7rem] text-slate-400">Énekes(ek)</p>
+                                            <p className="leading-relaxed">{request.singers}</p>
+                                            {request.notes && (
+                                                <p className="mt-3 rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs leading-relaxed text-slate-200">
+                                                    {request.notes}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="text-sm text-slate-200">
-                                        <p className="font-semibold uppercase tracking-[0.2em] text-[0.7rem] text-slate-400">Énekes(ek)</p>
-                                        <p className="leading-relaxed">{request.singers}</p>
-                                        {request.notes && (
-                                            <p className="mt-3 rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs leading-relaxed text-slate-200">
-                                                {request.notes}
+                                    <div className="flex w-full items-start justify-between gap-4 sm:flex-col sm:items-end sm:justify-between sm:gap-5">
+                                        <div className="text-xs text-slate-400 sm:text-right">
+                                            <p>{formatTimestamp(request.submittedAt)}</p>
+                                            <p className="uppercase tracking-[0.22em] text-slate-500">
+                                                {request.submittedBy === 'host' ? 'rendező' : 'vendég'}
                                             </p>
-                                        )}
+                                        </div>
+                                        <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleComplete(request.id)}
+                                                className="rounded-xl border border-emerald-400/35 bg-emerald-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200 transition hover:border-emerald-400/60 hover:bg-emerald-500/25 focus:outline-none focus:ring-2 focus:ring-emerald-400/35"
+                                            >
+                                                Kész
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="flex w-full items-start justify-between gap-4 sm:flex-col sm:items-end sm:justify-between sm:gap-5">
-                                    <div className="text-xs text-slate-400 sm:text-right">
-                                        <p>{formatTimestamp(request.submittedAt)}</p>
-                                        <p className="uppercase tracking-[0.22em] text-slate-500">
-                                            {request.submittedBy === 'host' ? 'rendező' : 'vendég'}
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => handleComplete(request.id)}
-                                            className="rounded-xl border border-emerald-400/35 bg-emerald-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200 transition hover:border-emerald-400/60 hover:bg-emerald-500/25 focus:outline-none focus:ring-2 focus:ring-emerald-400/35"
-                                        >
-                                            Kész
-                                        </button>
-                                        {/* <div
-                      aria-hidden="true"
-                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-dashed border-white/15 text-[0.65rem] uppercase tracking-[0.2em] text-slate-400/70"
-                    >
-                      +
-                    </div> */}
-                                    </div>
-                                </div>
-                            </li>
-                        ))}
+                                </li>
+                            ))}
                     </ul>
                 </section>
             </div>
 
             <button
                 type="button"
-                onClick={() => setIsFormOpen(true)}
+                onClick={openForm}
                 className="fixed bottom-6 right-6 z-20 inline-flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-sky-500 text-2xl font-bold text-white shadow-[0_0_55px_rgba(232,121,249,0.75)] transition hover:scale-105 focus:outline-none focus:ring-4 focus:ring-fuchsia-400/30 lg:bottom-8 lg:right-10"
                 aria-label="Új kérés hozzáadása"
             >
@@ -352,7 +448,8 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                                     onChange={handleInputChange}
                                     required
                                     placeholder="Pl. Don't Stop Me Now"
-                                    className="w-full rounded-2xl border border-fuchsia-500/40 bg-slate-900/70 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(247,137,222,0.65)] transition focus:border-fuchsia-400 focus:outline-none focus:ring-4 focus:ring-fuchsia-400/30"
+                                    disabled={formStatus === 'pending'}
+                                    className="w-full rounded-2xl border border-fuchsia-500/40 bg-slate-900/70 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(247,137,222,0.65)] transition focus:border-fuchsia-400 focus:outline-none focus:ring-4 focus:ring-fuchsia-400/30 disabled:opacity-70"
                                 />
                             </label>
 
@@ -364,7 +461,8 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                                     onChange={handleInputChange}
                                     required
                                     placeholder="Pl. Queen"
-                                    className="w-full rounded-2xl border border-sky-500/40 bg-slate-900/70 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(96,165,250,0.55)] transition focus:border-sky-400 focus:outline-none focus:ring-4 focus:ring-sky-400/30"
+                                    disabled={formStatus === 'pending'}
+                                    className="w-full rounded-2xl border border-sky-500/40 bg-slate-900/70 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(96,165,250,0.55)] transition focus:border-sky-400 focus:outline-none focus:ring-4 focus:ring-sky-400/30 disabled:opacity-70"
                                 />
                             </label>
 
@@ -376,7 +474,8 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                                     onChange={handleInputChange}
                                     required
                                     placeholder="Sorold fel, ki lép színpadra"
-                                    className="w-full rounded-2xl border border-emerald-500/40 bg-slate-900/70 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(16,185,129,0.5)] transition focus:border-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-400/30"
+                                    disabled={formStatus === 'pending'}
+                                    className="w-full rounded-2xl border border-emerald-500/40 bg-slate-900/70 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(16,185,129,0.5)] transition focus:border-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-400/30 disabled:opacity-70"
                                 />
                             </label>
 
@@ -387,9 +486,24 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                                     value={formData.notes}
                                     onChange={handleInputChange}
                                     placeholder="Pl. extra mikrofon vagy hangnem"
-                                    className="w-full rounded-2xl border border-white/15 bg-slate-900/60 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(148,163,184,0.5)] transition focus:border-fuchsia-400 focus:outline-none focus:ring-4 focus:ring-fuchsia-400/25"
+                                    disabled={formStatus === 'pending'}
+                                    className="w-full rounded-2xl border border-white/15 bg-slate-900/60 px-4 py-3 text-sm text-slate-100 shadow-[0_18px_45px_-28px_rgba(148,163,184,0.5)] transition focus:border-fuchsia-400 focus:outline-none focus:ring-4 focus:ring-fuchsia-400/25 disabled:opacity-70"
                                 />
                             </label>
+
+                            {formMessage && (
+                                <p
+                                    className={`text-xs font-medium uppercase tracking-[0.25em] ${
+                                        formStatus === 'error'
+                                            ? 'text-rose-300'
+                                            : formStatus === 'success'
+                                                ? 'text-emerald-300'
+                                                : 'text-slate-300'
+                                    }`}
+                                >
+                                    {formMessage}
+                                </p>
+                            )}
 
                             <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:justify-end">
                                 <button
@@ -401,9 +515,10 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                                 </button>
                                 <button
                                     type="submit"
-                                    className="rounded-2xl bg-gradient-to-r from-fuchsia-500 via-purple-500 to-sky-500 px-8 py-3 text-sm font-semibold uppercase tracking-[0.4em] text-white shadow-[0_0_45px_rgba(99,102,241,0.6)] transition hover:scale-[1.01] hover:shadow-[0_0_65px_rgba(232,121,249,0.75)] focus:outline-none focus:ring-4 focus:ring-fuchsia-400/40"
+                                    disabled={formStatus === 'pending'}
+                                    className="rounded-2xl bg-gradient-to-r from-fuchsia-500 via-purple-500 to-sky-500 px-8 py-3 text-sm font-semibold uppercase tracking-[0.4em] text-white shadow-[0_0_45px_rgba(99,102,241,0.6)] transition hover:scale-[1.01] hover:shadow-[0_0_65px_rgba(232,121,249,0.75)] focus:outline-none focus:ring-4 focus:ring-fuchsia-400/40 disabled:cursor-not-allowed disabled:opacity-70"
                                 >
-                                    Rendezői kérés mentése
+                                    {formStatus === 'pending' ? 'Mentés...' : 'Rendezői kérés mentése'}
                                 </button>
                             </div>
                         </form>
