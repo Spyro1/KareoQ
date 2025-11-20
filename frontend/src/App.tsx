@@ -81,15 +81,13 @@ export default function App(): React.ReactElement {
 
   return (
     <ToastProvider>
-      <div className="relative min-h-screen w-full bg-slate-950 text-slate-100">
+      <div className="relative min-h-[100dvh] w-full bg-slate-950 text-slate-100">
         <BackgroundGlow />
-        <div className="relative z-10 flex min-h-screen w-full">
+        <div className="relative z-10 flex min-h-[100dvh] w-full">
           {allowAdminView ? (
             <AdminDashboard backendBaseUrl={BACKEND_URL} />
           ) : (
-            <div className="flex min-h-screen w-full items-center justify-center px-4 py-16">
-              <SongRequestForm backendBaseUrl={BACKEND_URL} />
-            </div>
+            <SongRequestForm backendBaseUrl={BACKEND_URL} />
           )}
         </div>
         {isAdmin && !isAuthenticated && (

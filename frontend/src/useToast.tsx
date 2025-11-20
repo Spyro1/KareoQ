@@ -52,10 +52,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }): Reac
                     <div
                         className={`pointer-events-auto flex items-center gap-3 rounded-2xl border px-4 py-3 text-xs font-semibold uppercase tracking-[0.28em] shadow-[0_25px_65px_-30px_rgba(232,121,249,0.65)] ${
                             toast.tone === 'success'
-                                ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-100'
+                                ? 'border-emerald-400/40 bg-emerald-500 text-emerald-100'
                                 : toast.tone === 'error'
-                                    ? 'border-rose-400/50 bg-rose-500/20 text-rose-100'
-                                    : 'border-sky-400/40 bg-sky-500/15 text-sky-100'
+                                    ? 'border-rose-400/50 bg-rose-500 text-rose-100'
+                                    : 'border-sky-400/40 bg-sky-500 text-sky-100'
                         }`}
                     >
                         {toast.tone === 'error' && <span aria-hidden="true" className="text-lg">⚠</span>}
