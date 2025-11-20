@@ -1,0 +1,14 @@
+name: Orchestrator
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-frontend:
+    uses: ./.github/workflows/deploy-frontend.yml
+
+  deploy-backend:
+    needs: deploy-frontend
+    uses: ./.github/workflows/deploy-backend.yml
