@@ -56,10 +56,12 @@ jobs:
   deploy-frontend:
     needs: validate-tag
     uses: ./.github/workflows/deploy-frontend.yml
+    secrets: inherit
 
   deploy-backend:
     needs: deploy-frontend
     uses: ./.github/workflows/deploy-backend.yml
+    secrets: inherit
 
   rollback-on-failure:
     if: failure() && needs.validate-tag.outputs.previous_tag != ''
