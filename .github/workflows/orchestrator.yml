@@ -6,6 +6,11 @@ on:
       - '*' # Bármelyik tag, a részletes ellenőrzést a workflow végzi
   workflow_dispatch:  # Lehetővé teszi a manuális futtatást is a GitHub Actions fülről
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
   validate-tag:
     runs-on: ubuntu-latest
