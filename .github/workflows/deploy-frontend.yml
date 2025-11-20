@@ -1,16 +1,10 @@
 # A munkafolyamat neve, ez fog megjelenni a GitHub Actions fülön.
-name: Deploy React App to GitHub Pages
+name: Deploy Frontend
 
-# Mikor fusson le a munkafolyamat: Push a main branch-re.
+# Mikor fusson le a munkafolyamat
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'frontend/**' # Csak a frontend mappában történt változásokra fusson le
-      - '.github/workflows/deploy-frontend.yml' # Vagy ha ez a workflow fájl változik
-  # Lehetővé teszi a manuális futtatást is a GitHub Actions fülről.
-  workflow_dispatch:
+  workflow_call: {}   # Ez kell az orchestrator importhoz
+  workflow_dispatch:  # Lehetővé teszi a manuális futtatást is a GitHub Actions fülről
 
 # A futtatandó feladatok (job-ok)
 jobs:

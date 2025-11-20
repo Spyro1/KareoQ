@@ -1,17 +1,10 @@
 # A munkafolyamat neve, ez fog megjelenni a GitHub Actions fülön.
-name: FastAPI Backend Deploy
+name: Deploy Backend
 
+# Mikor fusson le a munkafolyamat
 on:
-  push:
-    # branches:
-    #   - main # Vagy a fő ágad neve
-    # paths:
-    #   - 'backend/**' # Csak a backend mappában történt változásokra fusson le
-    #   - '.github/workflows/deploy-backend.yml' # Vagy ha ez a workflow fájl változik
-    tags:
-      - '*' # Bármelyik tag, a részletes ellenőrzést a workflow végzi
-  workflow_dispatch:
-
+  workflow_call: {}   # Ez kell az orchestrator importhoz
+  workflow_dispatch:  # Lehetővé teszi a manuális futtatást is a GitHub Actions fülről
 jobs:
   deploy:
     # A környezet, amiben futni fog (leggyakrabban Ubuntu a CI/CD-hez)
@@ -20,29 +13,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Validate Release Tag
-        shell: bash
-        run: |
-          if [[ "${GITHUB_REF}" != refs/tags/* ]]; then
-            echo "::error::Ez a workflow csak tagek push-olásakor futtatható."
-            exit 1
-          fi
-
-          TAG_NAME="${GITHUB_REF#refs/tags/}"
-          if [[ ! "${TAG_NAME}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\ -\ .+)?$ ]]; then
-            echo "::error::A tag neve (${TAG_NAME}) nem illeszkedik a ^[0-9]+\\.[0-9]+\\.[0-9]+(\\ -\\ .+)?$ mintára."
-            exit 1
-          fi
-
-          echo "Tag validálva: ${TAG_NAME}"
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11' # Használj egy megfelelő Python verziót
+          python-version: '3.13'
 
       - name: Install Dependencies
         working-directory: ./backend
