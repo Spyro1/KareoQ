@@ -20,31 +20,7 @@ jobs:
       id-token: write
     # A feladat lépései
     steps:
-      # 1. Kód lekérése a repository-ból (Checkout)
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        
-      # 2. Node.js környezet beállítása
-      # Fontos, hogy ugyanazt a Node.js verziót használja, mint amit helyben
-      - name: Setup Node.js Environment
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22' # Használja a stabil, LTS verziót
-
-      # 3. Függőségek telepítése
-      # Ez futtatja az "npm install"-t
-      - name: Install Dependencies
-        run: npm install
-        working-directory: ./frontend 
-
-      # 4. Git felhasználói adatok konfigurálása
-      - name: Configure Git User Identity
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-        working-directory: ./frontend 
-        
-      # 5. Érzékeny env változók validálása még build előtt
+      # 1. Érzékeny env változók validálása ELSŐKÉNT
       - name: Validate Required Environment Variables
         env:
           REACT_APP_ADMIN_PASSWORD: ${{ vars.REACT_APP_ADMIN_PASSWORD }}
@@ -58,6 +34,27 @@ jobs:
             echo "Hiányzik az REACT_APP_BACKEND_URL environment value (vars)." >&2
             exit 1
           fi
+
+      # 2. Kód lekérése a repository-ból (Checkout)
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      # 3. Node.js környezet beállítása
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # 4. Függőségek telepítése
+      - name: Install Dependencies
+        run: npm install
+        working-directory: ./frontend 
+
+      # 5. Git felhasználói adatok konfigurálása
+      - name: Configure Git User Identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
         working-directory: ./frontend 
 
       # 6. A build és deploy parancs futtatása
