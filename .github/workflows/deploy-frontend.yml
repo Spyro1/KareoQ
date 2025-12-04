@@ -9,8 +9,8 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/deploy-frontend.yml'
-  workflow_call: {}   # Ez kell az orchestrator importhoz
-  workflow_dispatch:  # Lehetővé teszi a manuális futtatást is a GitHub Actions fülről
+  workflow_call: {}    # Ez kell az orchestrator importhoz
+  workflow_dispatch:   # Lehetővé teszi a manuális futtatást is a GitHub Actions fülről
 
 # A futtatandó feladatok (job-ok)
 jobs:
@@ -29,16 +29,16 @@ jobs:
       # 1. Érzékeny env változók validálása ELSŐKÉNT
       - name: Validate Required Environment Variables
         env:
-          REACT_APP_ADMIN_PASSWORD: ${{ secrets.REACT_APP_ADMIN_PASSWORD }}
-          REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL }}
+          REACT_APP_ADMIN_PASSWORD: ${{ vars.REACT_APP_ADMIN_PASSWORD }}
+          REACT_APP_BACKEND_URL: ${{ vars.REACT_APP_BACKEND_URL }}
         shell: bash
         run: |
           if [[ -z "$REACT_APP_ADMIN_PASSWORD" ]]; then
-            echo "REACT_APP_ADMIN_PASSWORD secret hiányzik" >&2
+            echo "REACT_APP_ADMIN_PASSWORD változó hiányzik" >&2
             exit 1
           fi
           if [[ -z "$REACT_APP_BACKEND_URL" ]]; then
-            echo "REACT_APP_BACKEND_URL secret hiányzik" >&2
+            echo "REACT_APP_BACKEND_URL változó hiányzik" >&2
             exit 1
           fi
           echo "Environment változók validálva."
@@ -68,11 +68,11 @@ jobs:
       # 6. A build és deploy parancs futtatása
       - name: Run Deploy Script
         env:
-          REACT_APP_ADMIN_PASSWORD: ${{ secrets.REACT_APP_ADMIN_PASSWORD }}
-          REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL }}
+          REACT_APP_ADMIN_PASSWORD: ${{ vars.REACT_APP_ADMIN_PASSWORD }}
+          REACT_APP_BACKEND_URL: ${{ vars.REACT_APP_BACKEND_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           npm run build
           npx gh-pages -d build --repo "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-        working-directory: ./frontend 
+        working-directory: ./frontend
