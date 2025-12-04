@@ -1,96 +1,89 @@
-name: Orchestrator
-
-on:
-  push:
-    tags:
-      - '*' # Bármelyik tag, a részletes ellenőrzést a workflow végzi
-  workflow_dispatch:  # Lehetővé teszi a manuális futtatást is a GitHub Actions fülről
-
-permissions:
-  contents: write
-  pages: write
-  id-token: write
-
+name: Orchestrator (disabled)
+on: {}
 jobs:
-  validate-tag:
-    environment:
-      name: production
+  noop:
     runs-on: ubuntu-latest
-    outputs:
-      current_tag: ${{ steps.tag_info.outputs.current_tag }}
-      previous_tag: ${{ steps.tag_info.outputs.previous_tag }}
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Teljes git történet kell a tagek eléréséhez
+      - run: echo "Orchestrator disabled"
 
-      - name: Validate Release Tag and Store Previous
-        id: tag_info
-        shell: bash
-        run: |
-          if [[ "${GITHUB_REF}" != refs/tags/* ]]; then
-            echo "::error::Ez a workflow csak tagek push-olásakor futtatható."
-            exit 1
-          fi
-
-          CURRENT_TAG="${GITHUB_REF#refs/tags/}"
-          if [[ ! "${CURRENT_TAG}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\ -\ .+)?$ ]]; then
-            echo "::error::A tag neve (${CURRENT_TAG}) nem illeszkedik a ^[0-9]+\\.[0-9]+\\.[0-9]+(\\ -\\ .+)?$ mintára."
-            exit 1
-          fi
-
-          echo "Tag validálva: ${CURRENT_TAG}"
-          echo "current_tag=${CURRENT_TAG}" >> $GITHUB_OUTPUT
-
-          # Előző tag lekérése (ha van)
-          PREVIOUS_TAG=$(git tag --sort=-v:refname | grep -E "^[0-9]+\.[0-9]+\.[0-9]+" | head -2 | tail -1)
-          if [[ -n "${PREVIOUS_TAG}" && "${PREVIOUS_TAG}" != "${CURRENT_TAG}" ]]; then
-            echo "Előző stabil tag: ${PREVIOUS_TAG}"
-            echo "previous_tag=${PREVIOUS_TAG}" >> $GITHUB_OUTPUT
-          else
-            echo "Nincs előző tag a rollback-hez."
-            echo "previous_tag=" >> $GITHUB_OUTPUT
-          fi
-
-  deploy-frontend:
-    needs: validate-tag
-    uses: ./.github/workflows/deploy-frontend.yml
-    secrets: inherit
-
-  deploy-backend:
-    needs: deploy-frontend
-    uses: ./.github/workflows/deploy-backend.yml
-    secrets: inherit
-
-  rollback-on-failure:
-    if: failure() && needs.validate-tag.outputs.previous_tag != ''
-    needs: [validate-tag, deploy-frontend, deploy-backend]
-    runs-on: ubuntu-latest
-    environment:
-      name: production
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Rollback to Previous Tag
-        shell: bash
-        run: |
-          PREVIOUS_TAG="${{ needs.validate-tag.outputs.previous_tag }}"
-          CURRENT_TAG="${{ needs.validate-tag.outputs.current_tag }}"
-          
-          echo "Deploy sikertelen! Rollback indítása..."
-          echo "Jelenlegi tag: ${CURRENT_TAG}"
-          echo "Előző stabil tag: ${PREVIOUS_TAG}"
-          
-          # Töröljük a sikertelen tag-et
-          git tag -d "${CURRENT_TAG}" || true
-          git push origin ":refs/tags/${CURRENT_TAG}" || true
-          
-          echo "Sikertelen tag (${CURRENT_TAG}) törölve."
-          echo "Az előző stabil verzió (${PREVIOUS_TAG}) marad érvényben."
-          echo "A szolgáltatások az előző verziót fogják használni."
+## Orchestrator disabled on request. Original content commented out below.
+# name: Orchestrator
+# on:
+#   push:
+#     tags:
+#       - '*' # Bármelyik tag, a részletes ellenőrzést a workflow végzi
+#   workflow_dispatch:  # Lehetővé teszi a manuális futtatást is a GitHub Actions fülről
+# permissions:
+#   contents: write
+#   pages: write
+#   id-token: write
+# jobs:
+#   validate-tag:
+#     environment:
+#       name: production
+#     runs-on: ubuntu-latest
+#     outputs:
+#       current_tag: ${{ steps.tag_info.outputs.current_tag }}
+#       previous_tag: ${{ steps.tag_info.outputs.previous_tag }}
+#     steps:
+#       - name: Checkout Repository
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#       - name: Validate Release Tag and Store Previous
+#         id: tag_info
+#         shell: bash
+#         run: |
+#           if [[ "${GITHUB_REF}" != refs/tags/* ]]; then
+#             echo "::error::Ez a workflow csak tagek push-olásakor futtatható."
+#             exit 1
+#           fi
+#           CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+#           if [[ ! "${CURRENT_TAG}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\ -\ .+)?$ ]]; then
+#             echo "::error::A tag neve (${CURRENT_TAG}) nem illeszkedik a mintára."
+#             exit 1
+#           fi
+#           echo "Tag validálva: ${CURRENT_TAG}"
+#           echo "current_tag=${CURRENT_TAG}" >> $GITHUB_OUTPUT
+#           PREVIOUS_TAG=$(git tag --sort=-v:refname | grep -E "^[0-9]+\.[0-9]+\.[0-9]+" | head -2 | tail -1)
+#           if [[ -n "${PREVIOUS_TAG}" && "${PREVIOUS_TAG}" != "${CURRENT_TAG}" ]]; then
+#             echo "Előző stabil tag: ${PREVIOUS_TAG}"
+#             echo "previous_tag=${PREVIOUS_TAG}" >> $GITHUB_OUTPUT
+#           else
+#             echo "Nincs előző tag a rollback-hez."
+#             echo "previous_tag=" >> $GITHUB_OUTPUT
+#           fi
+#   deploy-frontend:
+#     needs: validate-tag
+#     uses: ./.github/workflows/deploy-frontend.yml
+#     secrets: inherit
+#   deploy-backend:
+#     needs: deploy-frontend
+#     uses: ./.github/workflows/deploy-backend.yml
+#     secrets: inherit
+#   rollback-on-failure:
+#     if: failure() && needs.validate-tag.outputs.previous_tag != ''
+#     needs: [validate-tag, deploy-frontend, deploy-backend]
+#     runs-on: ubuntu-latest
+#     environment:
+#       name: production
+#     permissions:
+#       contents: write
+#     steps:
+#       - name: Checkout Repository
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#       - name: Rollback to Previous Tag
+#         shell: bash
+#         run: |
+#           PREVIOUS_TAG="${{ needs.validate-tag.outputs.previous_tag }}"
+#           CURRENT_TAG="${{ needs.validate-tag.outputs.current_tag }}"
+#           echo "Deploy sikertelen! Rollback indítása..."
+#           echo "Jelenlegi tag: ${CURRENT_TAG}"
+#           echo "Előző stabil tag: ${PREVIOUS_TAG}"
+#           git tag -d "${CURRENT_TAG}" || true
+#           git push origin ":refs/tags/${CURRENT_TAG}" || true
+#           echo "Sikertelen tag (${CURRENT_TAG}) törölve."
+#           echo "Az előző stabil verzió (${PREVIOUS_TAG}) marad érvényben."
+#           echo "A szolgáltatások az előző verziót fogják használni."

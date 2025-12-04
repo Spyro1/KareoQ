@@ -3,6 +3,12 @@ name: Deploy Backend
 
 # Mikor fusson le a munkafolyamat
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
   workflow_call: {}   # Ez kell az orchestrator importhoz
   workflow_dispatch:  # Lehetővé teszi a manuális futtatást is a GitHub Actions fülről
 jobs:

@@ -3,6 +3,12 @@ name: Deploy Frontend
 
 # Mikor fusson le a munkafolyamat
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
   workflow_call: {}   # Ez kell az orchestrator importhoz
   workflow_dispatch:  # Lehetővé teszi a manuális futtatást is a GitHub Actions fülről
 
@@ -23,17 +29,19 @@ jobs:
       # 1. Érzékeny env változók validálása ELSŐKÉNT
       - name: Validate Required Environment Variables
         env:
-          REACT_APP_ADMIN_PASSWORD: ${{ vars.REACT_APP_ADMIN_PASSWORD }}
-          REACT_APP_BACKEND_URL: ${{ vars.REACT_APP_BACKEND_URL }}
+          REACT_APP_ADMIN_PASSWORD: ${{ secrets.REACT_APP_ADMIN_PASSWORD }}
+          REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL }}
+        shell: bash
         run: |
-          if [ -z "$REACT_APP_ADMIN_PASSWORD" ]; then
-            echo "Hiányzik az REACT_APP_ADMIN_PASSWORD environment value (vars)." >&2
+          if [[ -z "$REACT_APP_ADMIN_PASSWORD" ]]; then
+            echo "REACT_APP_ADMIN_PASSWORD secret hiányzik" >&2
             exit 1
           fi
-          if [ -z "$REACT_APP_BACKEND_URL" ]; then
-            echo "Hiányzik az REACT_APP_BACKEND_URL environment value (vars)." >&2
+          if [[ -z "$REACT_APP_BACKEND_URL" ]]; then
+            echo "REACT_APP_BACKEND_URL secret hiányzik" >&2
             exit 1
           fi
+          echo "Environment változók validálva."
 
       # 2. Kód lekérése a repository-ból (Checkout)
       - name: Checkout Code
@@ -60,10 +68,11 @@ jobs:
       # 6. A build és deploy parancs futtatása
       - name: Run Deploy Script
         env:
-          REACT_APP_ADMIN_PASSWORD: ${{ vars.REACT_APP_ADMIN_PASSWORD }}
-          REACT_APP_BACKEND_URL: ${{ vars.REACT_APP_BACKEND_URL }}
+          REACT_APP_ADMIN_PASSWORD: ${{ secrets.REACT_APP_ADMIN_PASSWORD }}
+          REACT_APP_BACKEND_URL: ${{ secrets.REACT_APP_BACKEND_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
           npm run build
-          npx gh-pages -d build --repo "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          npx gh-pages -d build --repo "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
         working-directory: ./frontend 
