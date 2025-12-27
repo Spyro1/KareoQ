@@ -32,6 +32,10 @@ type AdminActionButtonsProps = {
     isAutoRefreshEnabled: boolean;
     onToggleAutoRefresh: () => void;
 
+    isKeepAliveEnabled: boolean;
+    onToggleKeepAlive: () => void;
+    canKeepAlive: boolean;
+
     theme?: AdminButtonsTheme;
 };
 
@@ -45,6 +49,9 @@ export function AdminActionButtons({
     onRefresh,
     isAutoRefreshEnabled,
     onToggleAutoRefresh,
+    isKeepAliveEnabled,
+    onToggleKeepAlive,
+    canKeepAlive,
     theme
 }: AdminActionButtonsProps): React.ReactElement {
     const resolvedTheme = theme ?? defaultTheme;
@@ -90,11 +97,24 @@ export function AdminActionButtons({
                 onClick={onToggleAutoRefresh}
                 className={`${resolvedTheme.neutral} ${
                     isAutoRefreshEnabled
-                        ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/25 focus:ring-emerald-400/30'
+                        ? 'border-emerald-400/50 bg-emerald-500/30 text-emerald-100 hover:bg-emerald-500/25 focus:ring-emerald-400/30'
                         : ''
                 }`}
             >
                 {isAutoRefreshEnabled ? 'Auto frissítés: be' : 'Auto frissítés: ki'}
+            </button>
+
+            <button
+                type="button"
+                disabled={!canKeepAlive}
+                onClick={onToggleKeepAlive}
+                className={`${resolvedTheme.neutral} ${
+                    isKeepAliveEnabled
+                        ? 'border-sky-400/50 bg-sky-500/15 text-sky-100 hover:bg-sky-500/25 focus:ring-sky-400/30'
+                        : ''
+                }`}
+            >
+                {isKeepAliveEnabled ? 'Keep-alive: be' : 'Keep-alive: ki'}
             </button>
         </nav>
     );

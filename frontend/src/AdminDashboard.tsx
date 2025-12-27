@@ -45,6 +45,8 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
     const [isResetting, setIsResetting] = useState(false);
     const [isAutoRefreshEnabled, setIsAutoRefreshEnabled] = useState(false);
     const autoRefreshIntervalRef = useRef<number | null>(null);
+    const [isKeepAliveEnabled, setIsKeepAliveEnabled] = useState(false);
+    const keepAliveIntervalRef = useRef<number | null>(null);
 
     const [formData, setFormData] = useState({
         songTitle: '',
@@ -139,6 +141,40 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
     useEffect(() => {
         loadRequests('initial');
     }, [loadRequests]);
+
+    const stopKeepAlive = useCallback(() => {
+        if (typeof window === 'undefined' || keepAliveIntervalRef.current === null) {
+            return;
+        }
+        window.clearInterval(keepAliveIntervalRef.current);
+        keepAliveIntervalRef.current = null;
+    }, []);
+
+    useEffect(() => stopKeepAlive(), [stopKeepAlive]);
+
+    useEffect(() => {
+        stopKeepAlive();
+
+        if (!isKeepAliveEnabled) {
+            return;
+        }
+
+        if (!backendHealthUrl || typeof window === 'undefined') {
+            setIsKeepAliveEnabled(false);
+            return;
+        }
+
+        const ping = () => {
+            fetch(backendHealthUrl, { method: 'GET', cache: 'no-store' }).catch(() => {
+                // keep-alive should be silent; the explicit refresh button already reports errors
+            });
+        };
+
+        ping();
+        keepAliveIntervalRef.current = window.setInterval(ping, 60_000);
+
+        return () => stopKeepAlive();
+    }, [backendHealthUrl, isKeepAliveEnabled, stopKeepAlive]);
 
     const clearWakeTimeout = useCallback(() => {
         if (typeof window === 'undefined' || wakeResetRef.current === null) {
@@ -410,6 +446,11 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                                 }
                                 return next;
                             });
+                        }}
+                        isKeepAliveEnabled={isKeepAliveEnabled}
+                        canKeepAlive={Boolean(backendHealthUrl)}
+                        onToggleKeepAlive={() => {
+                            setIsKeepAliveEnabled((prev) => !prev);
                         }}
                     />
                 </header>
