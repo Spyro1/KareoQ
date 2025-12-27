@@ -438,29 +438,45 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                                 )}
                             </div>
 
-                            <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 p-1">
+                            <div className="flex flex-wrap items-center justify-end gap-2">
+
                                 <button
                                     type="button"
-                                    onClick={() => setActiveTab('pending')}
-                                    className={`rounded-full px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.32em] transition focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 ${
-                                        activeTab === 'pending'
-                                            ? 'bg-white/10 text-white'
-                                            : 'text-slate-300 hover:bg-white/10'
-                                    }`}
+                                    disabled={activeTab !== 'pending' || requests.length < 2 || isRefreshing}
+                                    onClick={async () => {
+                                        const ordered = [...requests].sort(
+                                            (a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime()
+                                        );
+                                        setRequests(ordered);
+                                        await persistQueueOrder(ordered.map((entry) => entry.id));
+                                    }}
+                                    className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-slate-200 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 disabled:cursor-not-allowed disabled:opacity-70 sm:px-4"
                                 >
-                                    Aktív ({pendingCount})
+                                    Rendezés idő szerint
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveTab('closed')}
-                                    className={`rounded-full px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.32em] transition focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 ${
-                                        activeTab === 'closed'
-                                            ? 'bg-white/10 text-white'
-                                            : 'text-slate-300 hover:bg-white/10'
-                                    }`}
-                                >
-                                    Lezárt ({closedRequests.length})
-                                </button>
+                                <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 p-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveTab('pending')}
+                                        className={`rounded-full px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.32em] transition focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 ${activeTab === 'pending'
+                                                ? 'bg-white/10 text-white'
+                                                : 'text-slate-300 hover:bg-white/10'
+                                            }`}
+                                    >
+                                        Aktív ({pendingCount})
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveTab('closed')}
+                                        className={`rounded-full px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.32em] transition focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 ${activeTab === 'closed'
+                                                ? 'bg-white/10 text-white'
+                                                : 'text-slate-300 hover:bg-white/10'
+                                            }`}
+                                    >
+                                        Lezárt ({closedRequests.length})
+                                    </button>
+                                </div>
+
                             </div>
                         </header>
 
@@ -483,6 +499,7 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                                     onRequestsChange={setRequests}
                                     enableReorder
                                     onReorderCommit={persistQueueOrder}
+                                    highlightFirstRow
                                     actionLabel="Kész"
                                     onAction={handleComplete}
                                     actionButtonClassName="rounded-xl border border-emerald-400/35 bg-emerald-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200 transition hover:border-emerald-400/60 hover:bg-emerald-500/25 focus:outline-none focus:ring-2 focus:ring-emerald-400/35"

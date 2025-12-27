@@ -13,6 +13,7 @@ type AdminRequestTableProps = {
     onRequestsChange?: React.Dispatch<React.SetStateAction<AdminRequest[]>>;
     enableReorder?: boolean;
     onReorderCommit?: (orderedIds: number[]) => void;
+    highlightFirstRow?: boolean;
     actionLabel: string;
     onAction: (id: number) => void;
     actionButtonClassName: string;
@@ -23,6 +24,7 @@ export function AdminRequestTable({
     onRequestsChange,
     enableReorder = false,
     onReorderCommit,
+    highlightFirstRow = false,
     actionLabel,
     onAction,
     actionButtonClassName
@@ -47,6 +49,9 @@ export function AdminRequestTable({
                 </thead>
                 <tbody className="divide-y divide-white/10 text-sm text-slate-200">
                     {requests.map((request, idx) => (
+                        (() => {
+                            const isCurrent = highlightFirstRow && idx === 0;
+                            return (
                         <tr
                             key={request.id}
                             draggable={enableReorder}
@@ -114,7 +119,9 @@ export function AdminRequestTable({
                                     onReorderCommit(requests.map((entry) => entry.id));
                                 }
                             }}
-                            className={`transition-colors duration-150 hover:bg-white/5 ${dragOverIndex === idx ? 'bg-white/10' : ''} ${isDragging ? 'select-none' : ''}`}
+                            className={`transition-colors duration-150 hover:bg-white/5 ${
+                                dragOverIndex === idx ? 'bg-white/10' : ''
+                            } ${isCurrent ? 'bg-emerald-500/10' : ''} ${isDragging ? 'select-none' : ''}`}
                         >
                             <td className="whitespace-nowrap cursor-move px-4 py-3 text-slate-400">
                                 {formatTimestamp(request.submittedAt)}
@@ -136,6 +143,8 @@ export function AdminRequestTable({
                                 </button>
                             </td>
                         </tr>
+                            );
+                        })()
                     ))}
                 </tbody>
             </table>
