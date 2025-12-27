@@ -43,6 +43,8 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
+    const [isAutoRefreshEnabled, setIsAutoRefreshEnabled] = useState(false);
+    const autoRefreshIntervalRef = useRef<number | null>(null);
 
     const [formData, setFormData] = useState({
         songTitle: '',
@@ -104,6 +106,35 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
         },
         [backendRequestsUrl, showToast]
     );
+
+    const stopAutoRefresh = useCallback(() => {
+        if (typeof window === 'undefined' || autoRefreshIntervalRef.current === null) {
+            return;
+        }
+        window.clearInterval(autoRefreshIntervalRef.current);
+        autoRefreshIntervalRef.current = null;
+    }, []);
+
+    useEffect(() => stopAutoRefresh(), [stopAutoRefresh]);
+
+    useEffect(() => {
+        stopAutoRefresh();
+
+        if (!isAutoRefreshEnabled) {
+            return;
+        }
+
+        if (!backendRequestsUrl || typeof window === 'undefined') {
+            setIsAutoRefreshEnabled(false);
+            return;
+        }
+
+        autoRefreshIntervalRef.current = window.setInterval(() => {
+            loadRequests('refresh');
+        }, 30_000);
+
+        return () => stopAutoRefresh();
+    }, [backendRequestsUrl, isAutoRefreshEnabled, loadRequests, stopAutoRefresh]);
 
     useEffect(() => {
         loadRequests('initial');
@@ -370,6 +401,16 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                         onReset={handleResetQueue}
                         isRefreshing={isRefreshing}
                         onRefresh={() => loadRequests('refresh')}
+                        isAutoRefreshEnabled={isAutoRefreshEnabled}
+                        onToggleAutoRefresh={() => {
+                            setIsAutoRefreshEnabled((prev) => {
+                                const next = !prev;
+                                if (next) {
+                                    loadRequests('refresh');
+                                }
+                                return next;
+                            });
+                        }}
                     />
                 </header>
                 <div className="flex min-h-0 flex-1 flex-col gap-6 mb-16">

@@ -29,6 +29,9 @@ type AdminActionButtonsProps = {
     isRefreshing: boolean;
     onRefresh: () => void;
 
+    isAutoRefreshEnabled: boolean;
+    onToggleAutoRefresh: () => void;
+
     theme?: AdminButtonsTheme;
 };
 
@@ -40,6 +43,8 @@ export function AdminActionButtons({
     onReset,
     isRefreshing,
     onRefresh,
+    isAutoRefreshEnabled,
+    onToggleAutoRefresh,
     theme
 }: AdminActionButtonsProps): React.ReactElement {
     const resolvedTheme = theme ?? defaultTheme;
@@ -78,6 +83,18 @@ export function AdminActionButtons({
 
             <button type="button" onClick={onRefresh} disabled={isRefreshing} className={resolvedTheme.neutral}>
                 {isRefreshing ? 'Frissítés...' : 'Lista frissítése'}
+            </button>
+
+            <button
+                type="button"
+                onClick={onToggleAutoRefresh}
+                className={`${resolvedTheme.neutral} ${
+                    isAutoRefreshEnabled
+                        ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/25 focus:ring-emerald-400/30'
+                        : ''
+                }`}
+            >
+                {isAutoRefreshEnabled ? 'Auto frissítés: be' : 'Auto frissítés: ki'}
             </button>
         </nav>
     );
