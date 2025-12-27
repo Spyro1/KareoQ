@@ -109,8 +109,24 @@ export default function SongRequestForm({ backendBaseUrl }: SongRequestFormProps
         let detail = `Nem sikerült elküldeni (HTTP ${response.status}).`;
         try {
           const errorBody = await response.json();
-          if (typeof errorBody?.detail === 'string') {
-            detail = errorBody.detail;
+          const apiDetail = errorBody?.detail;
+          if (typeof apiDetail === 'string') {
+            detail = apiDetail;
+          } else if (apiDetail && typeof apiDetail === 'object') {
+            const message = typeof apiDetail.message === 'string' ? apiDetail.message : undefined;
+            const retryAfterSecondsRaw = apiDetail.retry_after_seconds;
+            const retryAfterSeconds =
+              typeof retryAfterSecondsRaw === 'number'
+                ? retryAfterSecondsRaw
+                : typeof retryAfterSecondsRaw === 'string'
+                  ? Number.parseInt(retryAfterSecondsRaw, 10)
+                  : NaN;
+
+            if (response.status === 429 && Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+              detail = `Még várnod kell ${retryAfterSeconds} mp-et, és utána küldheted a következő kérést.`;
+            } else if (message) {
+              detail = message;
+            }
           }
         } catch {
           /* noop */

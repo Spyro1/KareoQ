@@ -1,37 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useToast } from './useToast';
+import { AdminActionButtons } from './AdminActionButtons';
+import { AdminRequestTable } from './AdminRequestTable';
 
-type BackendSongRequest = {
-    id: number;
-    song_title: string;
-    performer: string;
-    singers: string;
-    notes?: string | null;
-    created_at: string;
-    played_at?: string | null;
-    is_played: boolean;
-    ip_address?: string;
-};
-
-type AdminRequest = {
-    id: number;
-    songTitle: string;
-    performer: string;
-    singers: string;
-    notes?: string;
-    submittedBy: 'guest' | 'host';
-    submittedAt: string;
-};
+import type { AdminRequest, BackendSongRequest } from './adminTypes';
 
 type AdminDashboardProps = {
     backendBaseUrl?: string;
 };
-
-const formatTimestamp = (value: string) =>
-    new Intl.DateTimeFormat('hu-HU', {
-        hour: '2-digit',
-        minute: '2-digit'
-    }).format(new Date(value));
 
 const ADMIN_IP_PREFIX = 'admin::';
 
@@ -50,6 +26,9 @@ const normalizeRequest = (payload: BackendSongRequest, origin?: 'guest' | 'host'
         notes: payload.notes ?? undefined,
         submittedBy: derivedOrigin,
         submittedAt: payload.created_at
+        ,
+        isPlayed: payload.is_played,
+        playedAt: payload.played_at ?? undefined
     };
 };
 
@@ -60,6 +39,7 @@ const sortRequestsBySubmittedAt = (entries: AdminRequest[]) =>
 
 export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.ReactElement {
     const [requests, setRequests] = useState<AdminRequest[]>([]);
+    const [closedRequests, setClosedRequests] = useState<AdminRequest[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
@@ -80,6 +60,8 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
     const wakeStartRef = useRef<number | null>(null);
     const { showToast } = useToast();
 
+    const [activeTab, setActiveTab] = useState<'pending' | 'closed'>('pending');
+
     const backendBase = useMemo(() => backendBaseUrl?.trim().replace(/\/+$/, '') ?? '', [backendBaseUrl]);
     const backendHealthUrl = useMemo(() => (backendBase ? `${backendBase}/health` : ''), [backendBase]);
     const backendRequestsUrl = useMemo(() => (backendBase ? `${backendBase}/requests` : ''), [backendBase]);
@@ -88,7 +70,6 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
 
     const pendingCount = useMemo(() => requests.length, [requests]);
 
-    
 
     const loadRequests = useCallback(
         async (mode: 'initial' | 'refresh' = 'initial') => {
@@ -101,13 +82,19 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
 
             mode === 'initial' ? setIsLoading(true) : setIsRefreshing(true);
             try {
-                const response = await fetch(backendRequestsUrl, { cache: 'no-store' });
+                const response = await fetch(`${backendRequestsUrl}?include_played=true`, { cache: 'no-store' });
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
                 const data: BackendSongRequest[] = await response.json();
                 const normalized = data.map((entry) => normalizeRequest(entry));
-                setRequests(sortRequestsBySubmittedAt(normalized));
+                const pending = normalized.filter((entry) => !entry.isPlayed);
+                const closed = normalized.filter((entry) => entry.isPlayed);
+                // IMPORTANT: keep backend order for pending requests.
+                // The backend already returns pending ordered by (sort_order, created_at).
+                // Re-sorting here would undo manual drag ordering.
+                setRequests(pending);
+                setClosedRequests(sortRequestsBySubmittedAt(closed));
             } catch (error) {
                 console.error('Fetch requests failed', error);
                 showToast('error', 'Nem sikerült lekérni a kéréseket. Próbáld újra.');
@@ -241,10 +228,8 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                 throw new Error(detail);
             }
 
-            const created: BackendSongRequest = await response.json();
-            setRequests((prev) =>
-                sortRequestsBySubmittedAt([...prev, normalizeRequest(created, 'host')])
-            );
+            await response.json();
+            await loadRequests('refresh');
             setFormStatus('success');
             setFormMessage('Kérés hozzáadva a sorhoz.');
             setFormData({ songTitle: '', performer: '', singers: '', notes: '' });
@@ -269,11 +254,63 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
+            const updated: BackendSongRequest = await response.json();
             setRequests((prev) => prev.filter((entry) => entry.id !== id));
+            setClosedRequests((prev) => sortRequestsBySubmittedAt([...prev, normalizeRequest(updated)]));
             showToast('success', 'Kérés lezárva.');
         } catch (error) {
             console.error('Mark as played failed', error);
             showToast('error', 'Nem sikerült teljesítettnek jelölni a kérést.');
+        }
+    };
+
+    const persistQueueOrder = useCallback(
+        async (orderedIds: number[]) => {
+            if (!backendBase) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${backendBase}/requests/order?admin=1`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Admin-Request': 'true'
+                    },
+                    body: JSON.stringify({ ordered_ids: orderedIds })
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                await loadRequests('refresh');
+            } catch (error) {
+                console.error('Persist order failed', error);
+                showToast('error', 'Nem sikerült elmenteni a sorrendet.');
+            }
+        },
+        [backendBase, loadRequests, showToast]
+    );
+
+    const handleRestore = async (id: number) => {
+        if (!backendBase) {
+            showToast('error', 'Backend URL nincs konfigurálva.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${backendBase}/requests/${id}/restore`, {
+                method: 'PATCH'
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            await response.json();
+            await loadRequests('refresh');
+            showToast('success', 'Kérés visszarakva a sorba.');
+        } catch (error) {
+            console.error('Restore request failed', error);
+            showToast('error', 'Nem sikerült visszarakni a kérést a sorba.');
         }
     };
 
@@ -318,138 +355,115 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
         setIsFormOpen(false);
     };
 
-    const wakeButtonClasses = useMemo(() => {
-        switch (wakeStatus) {
-            case 'pending':
-                return 'cursor-wait border-slate-500/40 bg-slate-700/40 text-slate-300 focus:ring-slate-400/40';
-            case 'success':
-                return 'border-emerald-400/70 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/25 focus:ring-emerald-400/40';
-            case 'error':
-                return 'border-rose-400/70 bg-rose-500/15 text-rose-100 hover:bg-rose-500/25 focus:ring-rose-400/40';
-            default:
-                return 'border-fuchsia-400/50 bg-fuchsia-500/15 text-fuchsia-100 hover:bg-fuchsia-500/25 focus:ring-fuchsia-400/40';
-        }
-    }, [wakeStatus]);
-
     return (
         <>
-            <div className="relative flex w-full flex-col gap-3 px-4 py-5 text-slate-100 sm:gap-4 sm:px-6">
+            <div className="relative flex h-[100dvh] w-full flex-col gap-3 overflow-hidden px-4 py-5 text-slate-100 sm:gap-4 sm:px-6">
                 <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-sm font-semibold uppercase tracking-[0.24em] text-fuchsia-200">kareoQ admin</h1>
                     </div>
-                    <nav className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.18em] sm:gap-3">
-                        <button
-                            type="button"
-                            onClick={handleWakeBackend}
-                            disabled={wakeStatus === 'pending'}
-                            className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.32em] transition focus:outline-none focus:ring-2 sm:px-4 ${wakeButtonClasses}`}
-                        >
-                            {wakeStatus === 'pending' && (
-                                <svg
-                                    className="h-3 w-3 animate-spin text-current"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    aria-hidden="true"
-                                >
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                    <path
-                                        className="opacity-75"
-                                        fill="currentColor"
-                                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                                    />
-                                </svg>
-                            )}
-                            <span>{wakeStatus === 'idle' ? 'Backend ébresztése' : wakeMessage}</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleResetQueue}
-                            disabled={isResetting}
-                            className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-slate-200 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 sm:px-4 disabled:cursor-not-allowed disabled:opacity-70"
-                        >
-                            {isResetting ? 'Új kareoQ...' : 'Új kareoQ'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => loadRequests('refresh')}
-                            disabled={isRefreshing}
-                            className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-slate-200 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 sm:px-4 disabled:cursor-not-allowed disabled:opacity-70"
-                        >
-                            {isRefreshing ? 'Frissítés...' : 'Lista frissítése'}
-                        </button>
-                    </nav>
+                    <AdminActionButtons
+                        wakeStatus={wakeStatus}
+                        wakeMessage={wakeMessage}
+                        onWake={handleWakeBackend}
+                        isResetting={isResetting}
+                        onReset={handleResetQueue}
+                        isRefreshing={isRefreshing}
+                        onRefresh={() => loadRequests('refresh')}
+                    />
                 </header>
-                <div className="grid gap-6">
-                    <section className="rounded-[20px] bg-slate-900/70 p-4 shadow-[0_16px_38px_-28px_rgba(99,102,241,0.5)] backdrop-blur-xl sm:p-5">
-                        <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-h-0 flex-1 flex-col gap-6 mb-16">
+                    <section className="flex min-h-0 flex-col rounded-[20px] bg-slate-900/70 p-4 shadow-[0_16px_38px_-28px_rgba(99,102,241,0.5)] backdrop-blur-xl sm:p-5">
+                        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex flex-col gap-1">
-                                <h2 className="text-base font-semibold uppercase tracking-[0.18em] text-slate-100">
-                                    Következő fellépők
-                                </h2>
-                                <p className="text-xs uppercase tracking-[0.3em] text-fuchsia-200">
-                                    Aktív kérések: {pendingCount}
-                                </p>
+                                {activeTab === 'pending' ? (
+                                    <>
+                                        <h2 className="text-base font-semibold uppercase tracking-[0.18em] text-slate-100">
+                                            Következő fellépők
+                                        </h2>
+                                        <p className="text-xs uppercase tracking-[0.3em] text-fuchsia-200">
+                                            Aktív kérések: {pendingCount}
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h2 className="text-base font-semibold uppercase tracking-[0.18em] text-slate-100">
+                                            Lezárt kérések
+                                        </h2>
+                                        <p className="text-xs uppercase tracking-[0.3em] text-slate-300">
+                                            Lezárva: {closedRequests.length}
+                                        </p>
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 p-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('pending')}
+                                    className={`rounded-full px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.32em] transition focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 ${
+                                        activeTab === 'pending'
+                                            ? 'bg-white/10 text-white'
+                                            : 'text-slate-300 hover:bg-white/10'
+                                    }`}
+                                >
+                                    Aktív ({pendingCount})
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('closed')}
+                                    className={`rounded-full px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.32em] transition focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 ${
+                                        activeTab === 'closed'
+                                            ? 'bg-white/10 text-white'
+                                            : 'text-slate-300 hover:bg-white/10'
+                                    }`}
+                                >
+                                    Lezárt ({closedRequests.length})
+                                </button>
                             </div>
                         </header>
 
-                        <ul className="mt-5 grid gap-3 sm:gap-4">
+                        <div className="mt-5 flex min-h-0 flex-1 flex-col">
                             {isLoading && (
-                                <li className="rounded-2xl border border-white/10 bg-slate-800/60 px-4 py-8 text-center text-sm text-slate-300">
+                                <div className="rounded-2xl border border-white/10 bg-slate-800/60 px-4 py-8 text-center text-sm text-slate-300">
                                     Lista betöltése...
-                                </li>
+                                </div>
                             )}
 
-                            {!isLoading && requests.length === 0 && (
-                                <li className="rounded-2xl border border-white/10 bg-slate-800/60 px-4 py-8 text-center text-sm text-slate-300">
+                            {!isLoading && activeTab === 'pending' && requests.length === 0 && (
+                                <div className="rounded-2xl border border-white/10 bg-slate-800/60 px-4 py-8 text-center text-sm text-slate-300">
                                     A sor üres — add hozzá az első fellépőt!
-                                </li>
+                                </div>
                             )}
 
-                            {!isLoading &&
-                                requests.map((request) => (
-                                    <li
-                                        key={request.id}
-                                        className="group relative grid grid-cols-1 gap-4 rounded-2xl border border-white/10 bg-slate-800/60 p-4 shadow-[0_18px_45px_-30px_rgba(96,165,250,0.5)] transition hover:border-sky-400/40 hover:shadow-[0_22px_55px_-30px_rgba(99,102,241,0.6)] sm:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)] sm:p-5"
-                                    >
-                                        <div className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-r from-fuchsia-500/10 via-purple-500/5 to-sky-500/10 opacity-0 transition group-hover:opacity-100" />
-                                        <div className="flex flex-col gap-4">
-                                            <div>
-                                                <p className="text-[0.7rem] uppercase tracking-[0.22em] text-slate-400">Dal címe</p>
-                                                <h3 className="text-lg font-semibold text-white sm:text-xl">{request.songTitle}</h3>
-                                                <p className="text-sm text-slate-300">Előadó: {request.performer}</p>
-                                            </div>
-                                            <div className="text-sm text-slate-200">
-                                                <p className="font-semibold uppercase tracking-[0.2em] text-[0.7rem] text-slate-400">Énekes(ek)</p>
-                                                <p className="leading-relaxed">{request.singers}</p>
-                                                {request.notes && (
-                                                    <p className="mt-3 rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs leading-relaxed text-slate-200">
-                                                        {request.notes}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="flex w-full items-start justify-between gap-4 sm:flex-col sm:items-end sm:justify-between sm:gap-5">
-                                            <div className="text-xs text-slate-400 sm:text-right">
-                                                <p>{formatTimestamp(request.submittedAt)}</p>
-                                                <p className="uppercase tracking-[0.22em] text-slate-500">
-                                                    {request.submittedBy === 'host' ? 'rendező' : 'vendég'}
-                                                </p>
-                                            </div>
-                                            <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-3">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleComplete(request.id)}
-                                                    className="rounded-xl border border-emerald-400/35 bg-emerald-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200 transition hover:border-emerald-400/60 hover:bg-emerald-500/25 focus:outline-none focus:ring-2 focus:ring-emerald-400/35"
-                                                >
-                                                    Kész
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </li>
-                                ))}
-                        </ul>
+                            {!isLoading && activeTab === 'pending' && requests.length > 0 && (
+                                <AdminRequestTable
+                                    requests={requests}
+                                    onRequestsChange={setRequests}
+                                    enableReorder
+                                    onReorderCommit={persistQueueOrder}
+                                    actionLabel="Kész"
+                                    onAction={handleComplete}
+                                    actionButtonClassName="rounded-xl border border-emerald-400/35 bg-emerald-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200 transition hover:border-emerald-400/60 hover:bg-emerald-500/25 focus:outline-none focus:ring-2 focus:ring-emerald-400/35"
+                                />
+                            )}
+
+                            {!isLoading && activeTab === 'closed' && closedRequests.length === 0 && (
+                                <div className="rounded-2xl border border-white/10 bg-slate-800/40 px-4 py-8 text-center text-sm text-slate-300">
+                                    Nincs lezárt kérés.
+                                </div>
+                            )}
+
+                            {!isLoading && activeTab === 'closed' && closedRequests.length > 0 && (
+                                <AdminRequestTable
+                                    requests={closedRequests}
+                                    enableReorder={false}
+                                    actionLabel="Vissza"
+                                    onAction={handleRestore}
+                                    actionButtonClassName="rounded-xl border border-sky-400/35 bg-sky-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-sky-100 transition hover:border-sky-400/60 hover:bg-sky-500/25 focus:outline-none focus:ring-2 focus:ring-sky-400/35"
+                                />
+                            )}
+                        </div>
                     </section>
                 </div>
 

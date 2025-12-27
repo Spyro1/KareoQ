@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from contextlib import suppress
+from datetime import datetime, timedelta
 from pathlib import Path
 
 TEST_DB_PATH = Path(__file__).resolve().parent / "test.db"
@@ -11,6 +12,8 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.database import get_engine
+from app.database import session_scope
+from app.models import SongRequest
 
 
 def cleanup_test_db() -> None:
@@ -39,8 +42,22 @@ def run_smoke() -> None:
         first = client.post("/requests", json=payload)
         assert first.status_code == 201
 
+        # New rule: guests must wait 60s between requests from the same IP.
+        # Backdate the created_at timestamp so the next request isn't blocked by cooldown.
+        with session_scope() as session:
+            first_row = session.get(SongRequest, first.json()["id"])
+            assert first_row is not None
+            first_row.created_at = datetime.utcnow() - timedelta(minutes=2)
+            session.add(first_row)
+
         second = client.post("/requests", json={**payload, "song_title": "Song B"})
         assert second.status_code == 201
+
+        with session_scope() as session:
+            second_row = session.get(SongRequest, second.json()["id"])
+            assert second_row is not None
+            second_row.created_at = datetime.utcnow() - timedelta(minutes=2)
+            session.add(second_row)
 
         third = client.post("/requests", json={**payload, "song_title": "Song C"})
         assert third.status_code == 429

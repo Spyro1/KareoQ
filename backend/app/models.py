@@ -3,14 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field
 
-
-class SongRequestBase(SQLModel):
-    song_title: str = Field(index=True, max_length=200)
-    performer: str = Field(max_length=200)
-    singers: str = Field(max_length=200)
-    notes: Optional[str] = Field(default=None, max_length=500)
+from .schemas import SongRequestBase
 
 
 class SongRequest(SongRequestBase, table=True):
@@ -19,15 +14,4 @@ class SongRequest(SongRequestBase, table=True):
     played_at: Optional[datetime] = Field(default=None, nullable=True)
     ip_address: str = Field(index=True, max_length=64)
     is_played: bool = Field(default=False, index=True)
-
-
-class SongRequestCreate(SongRequestBase):
-    pass
-
-
-class SongRequestRead(SongRequestBase):
-    id: int
-    created_at: datetime
-    played_at: Optional[datetime]
-    ip_address: str
-    is_played: bool
+    sort_order: Optional[int] = Field(default=None, index=True)

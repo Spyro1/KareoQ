@@ -44,5 +44,24 @@ Visit `http://127.0.0.1:8000/docs` for interactive OpenAPI docs.
 
 ## Development tips
 
-- The SQLite database file lives in `backend/app/app.db`. Delete it if you need a clean slate.
+- The SQLite database file lives in `backend/app/app.db`. Delete it if you need a clean slate (or after schema changes, e.g. adding new columns).
 - `backend/app/database.py` exposes `reset_db()` for local testing to rebuild the schema.
+
+## Seeding sample data
+
+Seed the database with a small set of sample song requests:
+
+```bash
+cd backend
+
+# Seed once (won't duplicate if data already exists)
+python -m app.seed
+
+# Drop + recreate tables, then seed
+python -m app.seed --reset
+
+# Insert even if the DB already has data
+python -m app.seed --force
+```
+
+You can override the SQLite filename using `KAREOQ_DB_FILENAME` (relative to `backend/app/` or absolute).
