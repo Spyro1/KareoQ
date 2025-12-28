@@ -1,9 +1,9 @@
 # TODO - Teendők
 
 - [x] Beérkezett kérésekre IP cím szűrést csinálni, két kérés lehet maximum egy IP-ről egyszerre a sorban
-- [ ] Lejátszott számokat is lehessen látni, és visszarakni a queue-ba, ha véletlen volt
-- [ ] Statisztika: Lejátszott számok száma, stb  
-- [ ] Felhasználói zene kérés után jelezzen vissza, hányan vannak előtte
+- [x] Lejátszott számokat is lehessen látni, és visszarakni a queue-ba, ha véletlen volt
+- [x] Statisztika: Lejátszott számok száma, stb  
+- [NOT NEEDED] Felhasználói zene kérés után jelezzen vissza, hányan vannak előtte
 - [ ] Felhasználó telefonjának értesítése, ha ő következik
 - [ ] Karaoke életciklus kezelése
   - Alapállapot: Nincs karaoke

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import BackgroundGlow from './BackgroundGlow';
 import SongRequestForm from './SongRequestForm';
 import { AdminDashboard } from './AdminDashboard';
-import { ToastProvider } from './useToast';
+import { ToastProvider } from './ToastProvider';
 
 const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD || 'admin123';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000/';
