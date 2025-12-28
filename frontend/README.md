@@ -1,46 +1,43 @@
-# Getting Started with Create React App
+# KareoQ Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+React + TypeScript single-page app.
 
-## Available Scripts
+- Guest UI: song request form
+- Admin UI: queue management (password gate)
 
-In the project directory, you can run:
+## Screenshots
 
-### `npm start`
+![Guest request form](../docs/RequestForm.png)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+![Admin login](../docs/Login.png)
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+![Admin dashboard](../docs/AdminDashboard.png)
 
-### `npm test`
+## Configuration
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Create `frontend/.env`:
 
-### `npm run build`
+```env
+REACT_APP_BACKEND_URL=http://localhost:8000
+REACT_APP_ADMIN_PASSWORD=your_secure_password
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Routes
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- Guest UI: http://localhost:3000/
+- Admin UI: http://localhost:3000/#admin
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Scripts
 
-### `npm run eject`
+- `npm start` - start the dev server
+- `npm run build` - production build to `frontend/build/`
+- `npm test` - CRA test runner
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Source layout
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+`src/` is intentionally small and component-driven:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+- `App.tsx` chooses guest vs admin view
+- `SongRequestForm.tsx` guest request form
+- `AdminDashboard.tsx` admin queue UI
+- `useToast.tsx` toast hook (paired with `ToastProvider.tsx`)

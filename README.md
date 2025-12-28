@@ -1,6 +1,20 @@
 # KareoQ
 
-A modern web application that serves as a virtual waiting room for karaoke singers. Guests can submit song requests through a beautiful interface, while organizers manage the queue through an admin dashboard.
+A modern web app for managing a karaoke request queue: guests submit song requests, organizers manage the live queue from a password-protected admin dashboard.
+
+## Screenshots
+
+### Guest request form
+
+![Guest request form](docs/RequestForm.png)
+
+### Admin login
+
+![Admin login](docs/Login.png)
+
+### Admin dashboard
+
+![Admin dashboard](docs/AdminDashboard.png)
 
 ## Features
 
@@ -94,6 +108,19 @@ The application will be available at:
 - **Backend API**: http://localhost:8000
 - **API Documentation**: http://localhost:8000/docs
 
+## Configuration
+
+Create a `.env` file in the `frontend/` directory:
+
+```env
+REACT_APP_BACKEND_URL=http://localhost:8000
+REACT_APP_ADMIN_PASSWORD=your_secure_password
+```
+
+Notes:
+- `REACT_APP_BACKEND_URL` should include the scheme (e.g. `http://`).
+- The admin screen is enabled when the URL contains `#admin`.
+
 ## Project Structure
 
 ```
@@ -110,11 +137,15 @@ KareoQ/
 ├── frontend/             # React frontend
 │   ├── public/
 │   ├── src/
-│   │   ├── App.tsx       # Main app component with routing
+│   │   ├── App.tsx
 │   │   ├── AdminDashboard.tsx
+│   │   ├── AdminRequestTable.tsx
+│   │   ├── AdminActionButtons.tsx
 │   │   ├── SongRequestForm.tsx
 │   │   ├── BackgroundGlow.tsx
-│   │   └── useToast.tsx  # Toast notification system
+│   │   ├── useToast.tsx
+│   │   ├── ToastProvider.tsx
+│   │   └── adminTypes.ts
 │   ├── package.json
 │   └── README.md
 ├── run.ps1              # Windows PowerShell startup script
@@ -122,30 +153,15 @@ KareoQ/
 └── README.md
 ```
 
-## Configuration
-
-### Environment Variables
-
-Create a `.env` file in the frontend directory:
-
-```env
-REACT_APP_BACKEND_URL=http://localhost:8000
-REACT_APP_ADMIN_PASSWORD=your_secure_password
-```
-
-### Backend Configuration
-
-The backend uses SQLite by default. To use a different database or change settings, modify `backend/app/database.py`.
-
 ## API Endpoints
 
 - `GET /health` - Health check with uptime
-- `GET /requests` - List song requests (query param: `include_played`, `admin`)
+- `GET /requests` - List song requests (query params: `include_played`, `admin`)
 - `POST /requests` - Submit a new song request
 - `PATCH /requests/{id}/play` - Mark a request as played
 - `DELETE /requests` - Reset the queue (delete all requests)
 
-See full API documentation at http://localhost:8000/docs when the backend is running.
+See full API docs at http://localhost:8000/docs when the backend is running.
 
 ## Tech Stack
 
