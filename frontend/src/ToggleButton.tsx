@@ -5,10 +5,13 @@ type ToggleButtonProps = {
     enabled: boolean;
     disabled?: boolean;
     onToggle: () => void;
-    labelOn: string;
-    labelOff: string;
+    labelOn: React.ReactNode;
+    labelOff: React.ReactNode;
     baseClassName: string;
     enabledClassName: string;
+    leadingIcon?: React.ReactNode;
+    ariaLabelOn?: string;
+    ariaLabelOff?: string;
 };
 
 export function ToggleButton({
@@ -18,13 +21,18 @@ export function ToggleButton({
     labelOn,
     labelOff,
     baseClassName,
-    enabledClassName
+    enabledClassName,
+    leadingIcon,
+    ariaLabelOn,
+    ariaLabelOff
 }: ToggleButtonProps): React.ReactElement {
     return (
         <ActionButton
             label={enabled ? labelOn : labelOff}
             onClick={onToggle}
             disabled={disabled}
+            ariaLabel={enabled ? ariaLabelOn : ariaLabelOff}
+            leadingIcon={leadingIcon}
             className={`${baseClassName} ${enabled ? enabledClassName : ''}`}
         />
     );

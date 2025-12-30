@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Check, Close, Plus, Undo } from 'flowbite-react-icons/outline';
 import { useToast } from './useToast';
 import { AdminActionButtons } from './AdminActionButtons';
 import { AdminRequestTable } from './AdminRequestTable';
+import { ActionButton } from './ActionButton';
 
 import type { AdminRequest, BackendSongRequest } from './adminTypes';
 
@@ -90,8 +92,9 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
-                const data: BackendSongRequest[] = await response.json();
-                const normalized = data.map((entry) => normalizeRequest(entry));
+
+                const payload: BackendSongRequest[] = await response.json();
+                const normalized = payload.map((entry) => normalizeRequest(entry));
                 const pending = normalized.filter((entry) => !entry.isPlayed);
                 const closed = normalized.filter((entry) => entry.isPlayed);
                 // IMPORTANT: keep backend order for pending requests.
@@ -429,6 +432,7 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                     <div>
                         <h1 className="text-sm font-semibold uppercase tracking-[0.24em] text-fuchsia-200">kareoQ admin</h1>
                     </div>
+
                     <AdminActionButtons
                         wakeStatus={wakeStatus}
                         wakeMessage={wakeMessage}
@@ -542,6 +546,7 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                                     onReorderCommit={persistQueueOrder}
                                     highlightFirstRow
                                     actionLabel="Kész"
+                                    actionIcon={<Check className="h-4 w-4" aria-hidden="true" />}
                                     onAction={handleComplete}
                                     actionButtonClassName="rounded-xl border border-emerald-400/35 bg-emerald-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200 transition hover:border-emerald-400/60 hover:bg-emerald-500/25 focus:outline-none focus:ring-2 focus:ring-emerald-400/35"
                                 />
@@ -558,6 +563,7 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                                     requests={closedRequests}
                                     enableReorder={false}
                                     actionLabel="Vissza"
+                                    actionIcon={<Undo className="h-4 w-4" aria-hidden="true" />}
                                     onAction={handleRestore}
                                     actionButtonClassName="rounded-xl border border-sky-400/35 bg-sky-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-sky-100 transition hover:border-sky-400/60 hover:bg-sky-500/25 focus:outline-none focus:ring-2 focus:ring-sky-400/35"
                                 />
@@ -565,15 +571,39 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                         </div>
                     </section>
                 </div>
+                <div className="fixed bottom-5 left-0 right-0 z-20 flex items-center justify-between px-4 sm:bottom-8 sm:px-8">
+                    <ActionButton
+                        label="Vendég űrlap"
+                        ariaLabel="Vendég űrlap megnyitása"
+                        onClick={() => window.location.assign('./')}
+                        leadingIcon={
+                            <svg
+                                className="h-4 w-4 text-fuchsia-200"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    d="M5 12h14M12 5l7 7-7 7"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                            </svg>
+                        }
+                        className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-xs font-semibold uppercase tracking-[0.28em] text-slate-100 shadow-lg transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/40"
+                    />
 
-                <button
-                    type="button"
-                    onClick={openForm}
-                    className="fixed bottom-6 right-6 z-20 inline-flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-sky-500 text-2xl font-bold text-white shadow-[0_0_55px_rgba(232,121,249,0.75)] transition hover:scale-105 focus:outline-none focus:ring-4 focus:ring-fuchsia-400/30 lg:bottom-8 lg:right-10"
-                    aria-label="Új kérés hozzáadása"
-                >
-                    +
-                </button>
+                    <ActionButton
+                        label={<span className="sr-only sm:not-sr-only">Új kérés</span>}
+                        ariaLabel="Új kérés hozzáadása"
+                        onClick={openForm}
+                        leadingIcon={<Plus className="h-6 w-6" aria-hidden="true" />}
+                        className="h-14 w-14 rounded-full border border-fuchsia-400/50 bg-fuchsia-500/15 px-0 py-0 text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-fuchsia-100 transition hover:bg-fuchsia-500/25 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 sm:h-auto sm:w-auto sm:px-4 sm:py-3"
+                    />
+                </div>
 
                 {isFormOpen && (
                     <div
@@ -593,7 +623,7 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                                 className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-lg font-semibold text-slate-200 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/40"
                                 aria-label="Bezárás"
                             >
-                                ×
+                                <Close className="h-5 w-5" aria-hidden="true" />
                             </button>
 
                             <div className="mb-6 text-center">
@@ -690,27 +720,6 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                     </div>
                 )}
             </div >
-            <a
-                href="./"
-                className="fixed bottom-5 left-5 z-20 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-xs font-semibold uppercase tracking-[0.28em] text-slate-100 shadow-lg transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/40 sm:bottom-8 sm:left-8"
-            >
-                <svg
-                    className="h-4 w-4 text-fuchsia-200"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                >
-                    <path
-                        d="M5 12h14M12 5l7 7-7 7"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    />
-                </svg>
-                Vendég űrlap
-            </a>
         </>
     );
 }

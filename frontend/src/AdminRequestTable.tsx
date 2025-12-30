@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { ActionButton } from './ActionButton';
 
 import type { AdminRequest } from './adminTypes';
 
@@ -15,6 +16,7 @@ type AdminRequestTableProps = {
     onReorderCommit?: (orderedIds: number[]) => void;
     highlightFirstRow?: boolean;
     actionLabel: string;
+    actionIcon?: React.ReactNode;
     onAction: (id: number) => void;
     actionButtonClassName: string;
 };
@@ -26,6 +28,7 @@ export function AdminRequestTable({
     onReorderCommit,
     highlightFirstRow = false,
     actionLabel,
+    actionIcon,
     onAction,
     actionButtonClassName
 }: AdminRequestTableProps): React.ReactElement {
@@ -40,10 +43,10 @@ export function AdminRequestTable({
                     <tr>
                         <th scope="col" className="px-4 py-3">Idő</th>
                         <th scope="col" className="px-4 py-3">Dal címe</th>
-                        <th scope="col" className="px-4 py-3">Előadó</th>
-                        <th scope="col" className="px-4 py-3">Énekes(ek)</th>
-                        <th scope="col" className="px-4 py-3">Megjegyzés</th>
-                        <th scope="col" className="px-4 py-3">Forrás</th>
+                        <th scope="col" className="hidden px-4 py-3 sm:table-cell">Előadó</th>
+                        <th scope="col" className="hidden px-4 py-3 sm:table-cell">Énekes(ek)</th>
+                        <th scope="col" className="hidden px-4 py-3 md:table-cell">Megjegyzés</th>
+                        <th scope="col" className="hidden px-4 py-3 md:table-cell">Forrás</th>
                         <th scope="col" className="px-4 py-3 text-right">Művelet</th>
                     </tr>
                 </thead>
@@ -127,20 +130,20 @@ export function AdminRequestTable({
                                 {formatTimestamp(request.submittedAt)}
                             </td>
                             <td className="cursor-move px-4 py-3 font-semibold text-white">{request.songTitle}</td>
-                            <td className="cursor-move px-4 py-3">{request.performer}</td>
-                            <td className="cursor-move px-4 py-3">{request.singers}</td>
-                            <td className="cursor-move px-4 py-3 text-slate-300">{request.notes ?? ''}</td>
-                            <td className="cursor-move px-4 py-3 text-slate-400 uppercase tracking-[0.16em]">
+                            <td className="hidden cursor-move px-4 py-3 sm:table-cell">{request.performer}</td>
+                            <td className="hidden cursor-move px-4 py-3 sm:table-cell">{request.singers}</td>
+                            <td className="hidden cursor-move px-4 py-3 text-slate-300 md:table-cell">{request.notes ?? ''}</td>
+                            <td className="hidden cursor-move px-4 py-3 text-slate-400 uppercase tracking-[0.16em] md:table-cell">
                                 {request.submittedBy === 'host' ? 'rendező' : 'vendég'}
                             </td>
                             <td className="px-4 py-3 text-right">
-                                <button
-                                    type="button"
+                                <ActionButton
+                                    label={<span className="sr-only sm:not-sr-only">{actionLabel}</span>}
+                                    ariaLabel={actionLabel}
                                     onClick={() => onAction(request.id)}
                                     className={actionButtonClassName}
-                                >
-                                    {actionLabel}
-                                </button>
+                                    leadingIcon={actionIcon}
+                                />
                             </td>
                         </tr>
                             );

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Clock, Refresh, Rocket, Server, TrashBin } from 'flowbite-react-icons/outline';
 import { ActionButton } from './ActionButton';
 import { ToggleButton } from './ToggleButton';
 
@@ -62,9 +63,14 @@ export function AdminActionButtons({
     return (
         <nav className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.18em] sm:gap-3">
             <ActionButton
-                label={wakeStatus === 'idle' ? 'Backend ébresztése' : wakeMessage}
+                label={
+                    <span className="sr-only sm:not-sr-only">
+                        {wakeStatus === 'idle' ? 'Backend ébresztése' : wakeMessage}
+                    </span>
+                }
                 onClick={onWake}
                 disabled={wakeStatus === 'pending'}
+                ariaLabel={wakeStatus === 'idle' ? 'Backend ébresztése' : wakeMessage}
                 className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.32em] transition focus:outline-none focus:ring-2 sm:px-4 ${wakeButtonClasses}`}
                 leadingIcon={
                     wakeStatus === 'pending' ? (
@@ -82,29 +88,38 @@ export function AdminActionButtons({
                                 d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                             />
                         </svg>
-                    ) : null
+                    ) : (
+                        <Rocket className="h-4 w-4" aria-hidden="true" />
+                    )
                 }
             />
 
             <ActionButton
-                label={isResetting ? 'Új kareoQ...' : 'Új kareoQ'}
+                label={<span className="sr-only sm:not-sr-only">{isResetting ? 'Új kareoQ...' : 'Új kareoQ'}</span>}
                 onClick={onReset}
                 disabled={isResetting}
+                ariaLabel={isResetting ? 'Új kareoQ...' : 'Új kareoQ'}
+                leadingIcon={<TrashBin className="h-4 w-4" aria-hidden="true" />}
                 className={resolvedTheme.neutral}
             />
 
             <ActionButton
-                label={isRefreshing ? 'Frissítés...' : 'Lista frissítése'}
+                label={<span className="sr-only sm:not-sr-only">{isRefreshing ? 'Frissítés...' : 'Lista frissítése'}</span>}
                 onClick={onRefresh}
                 disabled={isRefreshing}
+                ariaLabel={isRefreshing ? 'Frissítés...' : 'Lista frissítése'}
+                leadingIcon={<Refresh className="h-4 w-4" aria-hidden="true" />}
                 className={resolvedTheme.neutral}
             />
 
             <ToggleButton
                 enabled={isAutoRefreshEnabled}
                 onToggle={onToggleAutoRefresh}
-                labelOn="Auto frissítés: be"
-                labelOff="Auto frissítés: ki"
+                labelOn={<span className="sr-only sm:not-sr-only">Auto frissítés: be</span>}
+                labelOff={<span className="sr-only sm:not-sr-only">Auto frissítés: ki</span>}
+                ariaLabelOn="Auto frissítés: be"
+                ariaLabelOff="Auto frissítés: ki"
+                leadingIcon={<Clock className="h-4 w-4" aria-hidden="true" />}
                 baseClassName={resolvedTheme.neutral}
                 enabledClassName="border-emerald-300/80 bg-emerald-500/35 text-emerald-50 hover:bg-emerald-500/55 focus:ring-emerald-300/45"
             />
@@ -113,8 +128,11 @@ export function AdminActionButtons({
                 enabled={isKeepAliveEnabled}
                 disabled={!canKeepAlive}
                 onToggle={onToggleKeepAlive}
-                labelOn="Keep-alive: be"
-                labelOff="Keep-alive: ki"
+                labelOn={<span className="sr-only sm:not-sr-only">Keep-alive: be</span>}
+                labelOff={<span className="sr-only sm:not-sr-only">Keep-alive: ki</span>}
+                ariaLabelOn="Keep-alive: be"
+                ariaLabelOff="Keep-alive: ki"
+                leadingIcon={<Server className="h-4 w-4" aria-hidden="true" />}
                 baseClassName={resolvedTheme.neutral}
                 enabledClassName="border-sky-300/80 bg-sky-500/35 text-sky-50 hover:bg-sky-500/45 focus:ring-sky-300/45"
             />

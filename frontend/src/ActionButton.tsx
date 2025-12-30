@@ -1,11 +1,12 @@
 import React from 'react';
 
 type ActionButtonProps = {
-    label: string;
+    label: React.ReactNode;
     onClick: () => void;
     disabled?: boolean;
     className: string;
     leadingIcon?: React.ReactNode;
+    ariaLabel?: string;
 };
 
 export function ActionButton({
@@ -13,12 +14,19 @@ export function ActionButton({
     onClick,
     disabled,
     className,
-    leadingIcon
+    leadingIcon,
+    ariaLabel
 }: ActionButtonProps): React.ReactElement {
     return (
-        <button type="button" onClick={onClick} disabled={disabled} className={className}>
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            aria-label={ariaLabel}
+            className={`inline-flex items-center justify-center gap-2 ${className}`}
+        >
             {leadingIcon ? <span className="inline-flex items-center">{leadingIcon}</span> : null}
-            <span>{label}</span>
+            {label}
         </button>
     );
 }
