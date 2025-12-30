@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/KareoQ/static/css/main.9fb445b3.css",
-    "main.js": "/KareoQ/static/js/main.c360e9b1.js",
+    "main.css": "/KareoQ/static/css/main.0d4c4c79.css",
+    "main.js": "/KareoQ/static/js/main.cd2aec77.js",
     "index.html": "/KareoQ/index.html",
-    "main.9fb445b3.css.map": "/KareoQ/static/css/main.9fb445b3.css.map",
-    "main.c360e9b1.js.map": "/KareoQ/static/js/main.c360e9b1.js.map"
+    "main.0d4c4c79.css.map": "/KareoQ/static/css/main.0d4c4c79.css.map",
+    "main.cd2aec77.js.map": "/KareoQ/static/js/main.cd2aec77.js.map"
   },
   "entrypoints": [
-    "static/css/main.9fb445b3.css",
-    "static/js/main.c360e9b1.js"
+    "static/css/main.0d4c4c79.css",
+    "static/js/main.cd2aec77.js"
   ]
 }
