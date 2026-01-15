@@ -573,7 +573,7 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                 </div>
                 <div className="fixed bottom-5 left-0 right-0 z-20 flex items-center justify-between px-4 sm:bottom-8 sm:px-8">
                     <ActionButton
-                        label="Vendég űrlap"
+                        content="Vendég űrlap"
                         ariaLabel="Vendég űrlap megnyitása"
                         onClick={() => window.location.assign('./')}
                         leadingIcon={
@@ -593,15 +593,15 @@ export function AdminDashboard({ backendBaseUrl }: AdminDashboardProps): React.R
                                 />
                             </svg>
                         }
-                        className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-xs font-semibold uppercase tracking-[0.28em] text-slate-100 shadow-lg transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/40"
+                        coloring="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-xs font-semibold uppercase tracking-[0.28em] text-slate-100 shadow-lg transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/40"
                     />
 
                     <ActionButton
-                        label={<span className="sr-only sm:not-sr-only">Új kérés</span>}
+                        content={<span className="sr-only sm:not-sr-only">Új kérés</span>}
                         ariaLabel="Új kérés hozzáadása"
                         onClick={openForm}
                         leadingIcon={<Plus className="h-6 w-6" aria-hidden="true" />}
-                        className="h-14 w-14 rounded-full border border-fuchsia-400/50 bg-fuchsia-500/15 px-0 py-0 text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-fuchsia-100 transition hover:bg-fuchsia-500/25 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 sm:h-auto sm:w-auto sm:px-4 sm:py-3"
+                        coloring="h-14 w-14 rounded-full border border-fuchsia-400/50 bg-fuchsia-500/15 px-0 py-0 text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-fuchsia-100 transition hover:bg-fuchsia-500/25 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30 sm:h-auto sm:w-auto sm:px-4 sm:py-3"
                     />
                 </div>
 

@@ -1,19 +1,19 @@
 import React from 'react';
 
 type ActionButtonProps = {
-    label: React.ReactNode;
+    content: React.ReactNode;
     onClick: () => void;
     disabled?: boolean;
-    className: string;
+    coloring: string;
     leadingIcon?: React.ReactNode;
     ariaLabel?: string;
 };
 
 export function ActionButton({
-    label,
+    content,
     onClick,
     disabled,
-    className,
+    coloring,
     leadingIcon,
     ariaLabel
 }: ActionButtonProps): React.ReactElement {
@@ -23,10 +23,15 @@ export function ActionButton({
             onClick={onClick}
             disabled={disabled}
             aria-label={ariaLabel}
-            className={`inline-flex items-center justify-center gap-2 ${className}`}
+            className={`
+                inline-flex items-center justify-center gap-2 rounded-full border 
+                px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.32em] 
+                transition sm:px-4 disabled:cursor-not-allowed disabled:opacity-70 
+                ${coloring}`
+            }
         >
             {leadingIcon ? <span className="inline-flex items-center">{leadingIcon}</span> : null}
-            {label}
+            {content}
         </button>
     );
 }
